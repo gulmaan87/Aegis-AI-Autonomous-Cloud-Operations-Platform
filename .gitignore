@@ -1,0 +1,111 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+eggs/
+*.egg-info/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg
+MANIFEST
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+.ruff_cache/
+
+# ─── Node / Frontend ──────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.yarn/
+dist/
+build/
+.next/
+.nuxt/
+.output/
+.cache/
+*.tsbuildinfo
+
+# ─── Docker ───────────────────────────────────────────────
+.docker/
+
+# ─── Terraform ────────────────────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.rc
+
+# ─── Secrets & Environment ────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+secrets/
+.secrets/
+
+# ─── IDE & OS ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Logs ─────────────────────────────────────────────────
+*.log
+logs/
+*.pid
+
+# ─── Kubernetes ───────────────────────────────────────────
+kubeconfig
+*.kubeconfig
+
+# ─── Helm ─────────────────────────────────────────────────
+charts/*.tgz
+
+# ─── Misc ─────────────────────────────────────────────────
+*.bak
+*.tmp
+*.temp
+.cache/
