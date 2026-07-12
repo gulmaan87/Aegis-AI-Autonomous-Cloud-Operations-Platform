@@ -7,28 +7,41 @@ interface HealthStatus {
   checks?: { database: string; redis: string };
 }
 
-interface StatCard {
-  label: string;
-  value: string;
-  badge: string;
-  color: string;
+interface DashboardStats {
+  openIncidents: number;
+  totalExperiments: number;
 }
-
-const STATS: StatCard[] = [
-  { label: 'Active Incidents',   value: '0',    badge: 'Live',   color: 'badge-green'  },
-  { label: 'Services Running',   value: '—',    badge: 'Week 5', color: 'badge-blue'   },
-  { label: 'Chaos Experiments',  value: '—',    badge: 'Week 5', color: 'badge-yellow' },
-  { label: 'AI Remediations',    value: '—',    badge: 'Week 7', color: 'badge-blue'   },
-];
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const { data: health, isLoading } = useQuery<HealthStatus>({
+  const { data: health, isLoading: healthLoading } = useQuery<HealthStatus>({
     queryKey: ['health'],
     queryFn: async () => (await api.get<HealthStatus>('/health/ready')).data,
     refetchInterval: 10_000,
   });
+
+  const { data: stats } = useQuery<DashboardStats>({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const [incidents, experiments] = await Promise.all([
+        api.get('/incidents?status=OPEN'),
+        api.get('/chaos/experiments'),
+      ]);
+      return {
+        openIncidents: incidents.data.length,
+        totalExperiments: experiments.data.length,
+      };
+    },
+    refetchInterval: 5000,
+  });
+
+  const statCards = [
+    { label: 'Open Incidents',      value: stats ? String(stats.openIncidents)   : '—', badge: 'Live',   color: stats?.openIncidents ? 'badge-red'   : 'badge-green' },
+    { label: 'Chaos Experiments',   value: stats ? String(stats.totalExperiments) : '—', badge: 'Live',   color: 'badge-yellow' },
+    { label: 'AI Remediations',     value: '—',                                          badge: 'Week 7', color: 'badge-blue'   },
+    { label: 'Cost Savings (USD)',   value: '—',                                          badge: 'Week 8', color: 'badge-blue'   },
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -40,13 +53,13 @@ export default function Dashboard() {
         </div>
         <span className={`badge ${health?.status === 'ready' ? 'badge-green' : 'badge-red'}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${health?.status === 'ready' ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse`} />
-          {isLoading ? 'Checking…' : health?.status === 'ready' ? 'All Systems Operational' : 'Degraded'}
+          {healthLoading ? 'Checking…' : health?.status === 'ready' ? 'All Systems Operational' : 'Degraded'}
         </span>
       </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STATS.map(({ label, value, badge, color }) => (
+        {statCards.map(({ label, value, badge, color }) => (
           <div key={label} className="card">
             <div className="flex items-start justify-between mb-3">
               <p className="text-slate-400 text-xs">{label}</p>
@@ -62,9 +75,9 @@ export default function Dashboard() {
         <h2 className="text-sm font-semibold text-slate-300 mb-4">System Health</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[
-            { name: 'API Server',  status: health?.status === 'ready' ? 'ok' : 'unknown' },
-            { name: 'Database',    status: health?.checks?.database ?? 'unknown' },
-            { name: 'Redis',       status: health?.checks?.redis    ?? 'unknown' },
+            { name: 'API Server', status: health?.status === 'ready' ? 'ok' : 'unknown' },
+            { name: 'Database',   status: health?.checks?.database ?? 'unknown' },
+            { name: 'Redis',      status: health?.checks?.redis    ?? 'unknown' },
           ].map(({ name, status }) => (
             <div key={name} className="flex items-center gap-3 bg-surface-700 rounded-lg px-3 py-2.5">
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -84,18 +97,16 @@ export default function Dashboard() {
       {/* Roadmap progress */}
       <div className="card">
         <h2 className="text-sm font-semibold text-slate-300 mb-4">15-Level Roadmap</h2>
-        <div className="grid grid-cols-5 gap-2 sm:grid-cols-8 lg:grid-cols-15">
+        <div className="flex flex-wrap gap-2">
           {Array.from({ length: 15 }, (_, i) => {
             const level = i + 1;
-            const done = level === 1;
+            const done = level <= 2;
             return (
               <div
                 key={level}
                 title={`Level ${level}`}
-                className={`aspect-square rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${
-                  done
-                    ? 'bg-brand-600 text-white'
-                    : 'bg-surface-700 text-slate-600'
+                className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${
+                  done ? 'bg-brand-600 text-white' : 'bg-surface-700 text-slate-600'
                 }`}
               >
                 {level}
@@ -103,7 +114,7 @@ export default function Dashboard() {
             );
           })}
         </div>
-        <p className="text-slate-500 text-xs mt-3">Level 1 — Foundation complete · 14 levels remaining</p>
+        <p className="text-slate-500 text-xs mt-3">Levels 1–2 complete · 13 levels remaining</p>
       </div>
     </div>
   );

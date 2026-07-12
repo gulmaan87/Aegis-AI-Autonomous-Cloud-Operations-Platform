@@ -15,16 +15,18 @@
 
 @layer components {
   .card {
-    @apply bg-surface-800 rounded-xl border border-white/8 p-5;
+    @apply bg-surface-800 rounded-xl border p-5;
+    border-color: rgb(255 255 255 / 0.08);
   }
   .btn-primary {
     @apply bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2
            rounded-lg transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .input {
-    @apply w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm
+    @apply w-full bg-surface-700 border rounded-lg px-3 py-2 text-sm
            text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500
            transition-shadow duration-150;
+    border-color: rgb(255 255 255 / 0.10);
   }
   .badge {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;

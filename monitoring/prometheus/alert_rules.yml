@@ -1,0 +1,30 @@
+groups:
+  - name: aegis
+    interval: 15s
+    rules:
+      - alert: ChaosExperimentActive
+        expr: chaos_experiments_active > 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Chaos experiment is running"
+          description: "{{ $value }} chaos experiment(s) currently active"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_errors_total[1m]) > 0.1
+        for: 30s
+        labels:
+          severity: high
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+
+      - alert: BackendDown
+        expr: up{job="aegis-backend"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Aegis backend is down"
+          description: "Backend has been unreachable for 15 seconds"

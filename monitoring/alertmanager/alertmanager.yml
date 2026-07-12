@@ -1,0 +1,14 @@
+global:
+  resolve_timeout: 1m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 1h
+  receiver: 'log'
+
+receivers:
+  - name: 'log'
+    # Alerts are visible in Alertmanager UI at http://localhost:9093
+    # Add Slack/email/webhook here in a future week

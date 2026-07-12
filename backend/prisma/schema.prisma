@@ -20,11 +20,72 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  experiments ChaosExperiment[]
+
   @@index([email])
+}
+
+model ChaosExperiment {
+  id         String           @id @default(cuid())
+  name       String
+  type       ExperimentType
+  durationMs Int
+  status     ExperimentStatus @default(PENDING)
+  startedAt  DateTime?
+  endedAt    DateTime?
+  createdBy  String
+  creator    User             @relation(fields: [createdBy], references: [id])
+  createdAt  DateTime         @default(now())
+  incident   Incident?
+
+  @@index([status])
+}
+
+model Incident {
+  id           String          @id @default(cuid())
+  title        String
+  severity     Severity        @default(MEDIUM)
+  status       IncidentStatus  @default(OPEN)
+  experimentId String?         @unique
+  experiment   ChaosExperiment? @relation(fields: [experimentId], references: [id])
+  resolvedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([status])
 }
 
 enum Role {
   USER
   ADMIN
   OPERATOR
+}
+
+enum ExperimentType {
+  HIGH_CPU
+  HIGH_LATENCY
+  SERVICE_ERROR
+  DB_SLOWDOWN
+  MEMORY_PRESSURE
+}
+
+enum ExperimentStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  STOPPED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
 }

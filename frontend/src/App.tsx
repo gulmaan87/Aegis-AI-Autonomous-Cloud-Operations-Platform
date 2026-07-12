@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './lib/auth';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Chaos from './pages/Chaos';
+import Incidents from './pages/Incidents';
 
 const qc = new QueryClient();
 
@@ -27,22 +29,13 @@ export default function App() {
               }
             >
               <Route path="/" element={<Dashboard />} />
-              <Route path="/incidents" element={<ComingSoon label="Incidents" week={5} />} />
+              <Route path="/chaos" element={<Chaos />} />
+              <Route path="/incidents" element={<Incidents />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
-  );
-}
-
-function ComingSoon({ label, week }: { label: string; week: number }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <div className="text-5xl mb-4">🚧</div>
-      <h2 className="text-xl font-bold text-slate-200">{label}</h2>
-      <p className="text-slate-400 text-sm mt-2">Coming in Week {week}</p>
-    </div>
   );
 }
