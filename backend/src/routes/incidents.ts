@@ -9,17 +9,20 @@ const router = Router();
 router.use(requireAuth);
 
 const UpdateSchema = z.object({
-  status: z.nativeEnum(IncidentStatus),
+  status: z.nativeEnum(IncidentStatus).optional(),
+  notes: z.string().max(2000).optional(),
+}).refine((d) => d.status !== undefined || d.notes !== undefined, {
+  message: 'At least one of status or notes must be provided',
 });
 
-// GET /api/incidents
+// ── GET /api/incidents ────────────────────────────────────────────────────────
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const { status, severity } = req.query;
 
   const incidents = await db.incident.findMany({
     where: {
-      ...(status ? { status: status as IncidentStatus } : {}),
-      ...(severity ? { severity: severity as Severity } : {}),
+      ...(status   ? { status:   status   as IncidentStatus } : {}),
+      ...(severity ? { severity: severity as Severity       } : {}),
     },
     orderBy: { createdAt: 'desc' },
     include: {
@@ -32,7 +35,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   res.json(incidents);
 });
 
-// GET /api/incidents/:id
+// ── GET /api/incidents/:id ────────────────────────────────────────────────────
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   const incident = await db.incident.findUnique({
     where: { id: req.params.id },
@@ -45,7 +48,9 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   res.json(incident);
 });
 
-// PATCH /api/incidents/:id
+// ── PATCH /api/incidents/:id ──────────────────────────────────────────────────
+// Accepts { status?, notes? } — at least one field required.
+// OPERATOR / ADMIN only.
 router.patch(
   '/:id',
   requireRole('OPERATOR', 'ADMIN'),
@@ -56,12 +61,14 @@ router.patch(
       return;
     }
 
-    const { status } = parsed.data;
+    const { status, notes } = parsed.data;
+
     const incident = await db.incident.update({
       where: { id: req.params.id },
       data: {
-        status,
+        ...(status !== undefined ? { status } : {}),
         ...(status === 'RESOLVED' ? { resolvedAt: new Date() } : {}),
+        ...(notes !== undefined ? { notes } : {}),
       },
     });
     res.json(incident);

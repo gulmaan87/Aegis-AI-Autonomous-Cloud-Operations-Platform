@@ -10,6 +10,7 @@ interface Incident {
   title: string;
   severity: Severity;
   status: IncidentStatus;
+  notes: string | null;
   createdAt: string;
   resolvedAt: string | null;
   experiment?: { id: string; name: string; type: string; status: string } | null;
@@ -48,6 +49,9 @@ export default function Incidents() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<IncidentStatus | 'ALL'>('ALL');
   const [expanded, setExpanded] = useState<string | null>(null);
+  // Draft notes per incident id
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+  const [noteSaving, setNoteSaving] = useState<string | null>(null);
 
   const { data: incidents = [], isLoading } = useQuery<Incident[]>({
     queryKey: ['incidents', filter],
@@ -62,8 +66,22 @@ export default function Incidents() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['incidents'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      qc.invalidateQueries({ queryKey: ['chaos-status'] });
     },
   });
+
+  async function saveNote(id: string) {
+    const notes = noteDrafts[id];
+    if (notes === undefined) return;
+    setNoteSaving(id);
+    try {
+      await api.patch(`/incidents/${id}`, { notes });
+      qc.invalidateQueries({ queryKey: ['incidents'] });
+      setNoteDrafts((d) => { const n = { ...d }; delete n[id]; return n; });
+    } finally {
+      setNoteSaving(null);
+    }
+  }
 
   const openCount = incidents.filter((i) => i.status === 'OPEN').length;
 
@@ -107,6 +125,9 @@ export default function Incidents() {
             {incidents.map((inc) => {
               const nextAction = STATUS_NEXT[inc.status];
               const isExpanded = expanded === inc.id;
+              const draft = noteDrafts[inc.id] ?? inc.notes ?? '';
+              const isDirty = noteDrafts[inc.id] !== undefined && noteDrafts[inc.id] !== (inc.notes ?? '');
+
               return (
                 <div key={inc.id} className="rounded-lg border border-white/8 overflow-hidden">
                   {/* Row */}
@@ -123,7 +144,8 @@ export default function Incidents() {
 
                   {/* Detail */}
                   {isExpanded && (
-                    <div className="px-4 py-3 bg-surface-800 border-t border-white/8 space-y-3">
+                    <div className="px-4 py-3 bg-surface-800 border-t border-white/8 space-y-4">
+                      {/* Meta */}
                       <div className="grid grid-cols-2 gap-4 text-xs">
                         <div>
                           <p className="text-slate-500">Created</p>
@@ -143,6 +165,29 @@ export default function Incidents() {
                         )}
                       </div>
 
+                      {/* Notes */}
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-500">Investigation Notes</p>
+                        <textarea
+                          rows={3}
+                          disabled={inc.status === 'RESOLVED'}
+                          className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          placeholder={inc.status === 'RESOLVED' ? 'Incident resolved.' : 'Add investigation notes…'}
+                          value={draft}
+                          onChange={(e) => setNoteDrafts((d) => ({ ...d, [inc.id]: e.target.value }))}
+                        />
+                        {isDirty && (
+                          <button
+                            className="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                            onClick={() => saveNote(inc.id)}
+                            disabled={noteSaving === inc.id}
+                          >
+                            {noteSaving === inc.id ? 'Saving…' : 'Save Notes'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Status transition */}
                       {nextAction && (
                         <button
                           className="btn-primary text-xs px-3 py-1.5"

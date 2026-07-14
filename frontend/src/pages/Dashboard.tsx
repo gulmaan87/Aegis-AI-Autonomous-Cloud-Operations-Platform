@@ -12,6 +12,36 @@ interface DashboardStats {
   totalExperiments: number;
 }
 
+interface ChaosStatus {
+  active: {
+    id: string;
+    name: string;
+    type: string;
+    durationMs: number;
+    startedAt: string;
+  } | null;
+  activeFlags: Record<string, string>;
+}
+
+const FLAG_LABELS: Record<string, { label: string; color: string }> = {
+  'chaos:latency':         { label: '🐢 High Latency',     color: 'text-amber-400'  },
+  'chaos:error_rate':      { label: '💥 Service Errors',    color: 'text-red-400'    },
+  'chaos:db_slowdown':     { label: '🗄️ DB Slowdown',       color: 'text-purple-400' },
+  'chaos:memory_pressure': { label: '🧠 Memory Pressure',   color: 'text-blue-400'   },
+};
+
+function elapsed(startedAt: string) {
+  const diffMs = Date.now() - new Date(startedAt).getTime();
+  const secs = Math.floor(diffMs / 1000);
+  if (secs < 60) return `${secs}s`;
+  return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+}
+
+function progress(startedAt: string, durationMs: number) {
+  const diffMs = Date.now() - new Date(startedAt).getTime();
+  return Math.min(100, Math.round((diffMs / durationMs) * 100));
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
 
@@ -36,12 +66,22 @@ export default function Dashboard() {
     refetchInterval: 5000,
   });
 
+  const { data: chaosStatus } = useQuery<ChaosStatus>({
+    queryKey: ['chaos-status'],
+    queryFn: async () => (await api.get('/chaos/status')).data,
+    refetchInterval: 3000,
+  });
+
   const statCards = [
-    { label: 'Open Incidents',      value: stats ? String(stats.openIncidents)   : '—', badge: 'Live',   color: stats?.openIncidents ? 'badge-red'   : 'badge-green' },
-    { label: 'Chaos Experiments',   value: stats ? String(stats.totalExperiments) : '—', badge: 'Live',   color: 'badge-yellow' },
-    { label: 'AI Remediations',     value: '—',                                          badge: 'Week 7', color: 'badge-blue'   },
-    { label: 'Cost Savings (USD)',   value: '—',                                          badge: 'Week 8', color: 'badge-blue'   },
+    { label: 'Open Incidents',    value: stats ? String(stats.openIncidents)   : '—', badge: 'Live',   color: stats?.openIncidents ? 'badge-red'   : 'badge-green' },
+    { label: 'Chaos Experiments', value: stats ? String(stats.totalExperiments) : '—', badge: 'Live',   color: 'badge-yellow' },
+    { label: 'AI Remediations',   value: '—',                                          badge: 'Week 7', color: 'badge-blue'   },
+    { label: 'Cost Savings (USD)', value: '—',                                         badge: 'Week 8', color: 'badge-blue'   },
   ];
+
+  const activeExp = chaosStatus?.active ?? null;
+  const activeFlags = chaosStatus?.activeFlags ?? {};
+  const flagKeys = Object.keys(activeFlags);
 
   return (
     <div className="p-6 space-y-6">
@@ -68,6 +108,64 @@ export default function Dashboard() {
             <p className="text-2xl font-bold text-slate-100">{value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Live Chaos Status */}
+      <div className={`card border ${activeExp ? 'border-red-500/30 bg-red-500/5' : 'border-white/8'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-slate-300">Live Chaos Status</h2>
+          {activeExp ? (
+            <span className="badge badge-red">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+              RUNNING
+            </span>
+          ) : (
+            <span className="badge badge-green">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              All Clear
+            </span>
+          )}
+        </div>
+
+        {activeExp ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-100">{activeExp.name}</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {activeExp.type.replace(/_/g, ' ')} · {elapsed(activeExp.startedAt)} elapsed
+                </p>
+              </div>
+              <p className="text-xs text-slate-400">
+                {Math.round(activeExp.durationMs / 1000)}s total
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-surface-700 rounded-full h-1.5">
+              <div
+                className="bg-red-500 h-1.5 rounded-full transition-all duration-1000"
+                style={{ width: `${progress(activeExp.startedAt, activeExp.durationMs)}%` }}
+              />
+            </div>
+
+            {/* Active flags */}
+            {flagKeys.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {flagKeys.map((key) => {
+                  const meta = FLAG_LABELS[key];
+                  return (
+                    <span key={key} className={`text-xs font-medium ${meta?.color ?? 'text-slate-400'}`}>
+                      {meta?.label ?? key} ({activeFlags[key]}ms)
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-slate-500 text-sm">No experiment running. Head to Chaos to launch one.</p>
+        )}
       </div>
 
       {/* System health detail */}

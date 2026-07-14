@@ -34,6 +34,7 @@ model ChaosExperiment {
   status     ExperimentStatus @default(PENDING)
   startedAt  DateTime?
   endedAt    DateTime?
+  stoppedBy  String?          // userId of whoever called /stop — null if auto-completed
   createdBy  String
   creator    User             @relation(fields: [createdBy], references: [id])
   createdAt  DateTime         @default(now())
@@ -43,15 +44,16 @@ model ChaosExperiment {
 }
 
 model Incident {
-  id           String          @id @default(cuid())
+  id           String           @id @default(cuid())
   title        String
-  severity     Severity        @default(MEDIUM)
-  status       IncidentStatus  @default(OPEN)
-  experimentId String?         @unique
+  severity     Severity         @default(MEDIUM)
+  status       IncidentStatus   @default(OPEN)
+  notes        String?          // investigation notes added by operators
+  experimentId String?          @unique
   experiment   ChaosExperiment? @relation(fields: [experimentId], references: [id])
   resolvedAt   DateTime?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@index([status])
 }
