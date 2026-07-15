@@ -2,24 +2,18 @@ groups:
   - name: aegis
     interval: 15s
     rules:
+
+      # ── Chaos Engineering ────────────────────────────────────────────────────
       - alert: ChaosExperimentActive
         expr: chaos_experiments_active > 0
         for: 0s
         labels:
-          severity: warning
-        annotations:
-          summary: "Chaos experiment is running"
-          description: "{{ $value }} chaos experiment(s) currently active"
-
-      - alert: HighErrorRate
-        expr: rate(http_requests_errors_total[1m]) > 0.1
-        for: 30s
-        labels:
           severity: high
         annotations:
-          summary: "High error rate detected"
-          description: "Error rate is {{ $value | humanizePercentage }}"
+          summary: "Chaos experiment is running"
+          description: "{{ $value }} chaos experiment(s) currently active. Failures may be injected."
 
+      # ── API Health ───────────────────────────────────────────────────────────
       - alert: BackendDown
         expr: up{job="aegis-backend"} == 0
         for: 15s
@@ -27,4 +21,36 @@ groups:
           severity: critical
         annotations:
           summary: "Aegis backend is down"
-          description: "Backend has been unreachable for 15 seconds"
+          description: "Backend has been unreachable for 15 seconds. All user-facing features are unavailable."
+
+      # ── Process Resource Pressure ─────────────────────────────────────────────
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes{job="aegis-backend"} > 200 * 1024 * 1024
+        for: 1m
+        labels:
+          severity: high
+        annotations:
+          summary: "High memory usage on backend"
+          description: "Backend process is using {{ $value | humanize1024 }}B RSS — above 200 MiB for 1 minute."
+
+      - alert: HighCpuUsage
+        # process_cpu_seconds_total is cumulative; rate gives CPU fraction (1.0 = 1 full core)
+        expr: rate(process_cpu_seconds_total{job="aegis-backend"}[1m]) > 0.8
+        for: 1m
+        labels:
+          severity: medium
+        annotations:
+          summary: "High CPU usage on backend"
+          description: "Backend CPU usage is {{ $value | humanizePercentage }} over the last minute."
+
+      # ── Active Chaos Injection Signals ───────────────────────────────────────
+      # These fire when chaos Redis flags are reflected in custom metrics.
+      # chaos_experiments_total tracks starts; use it to detect sustained chaos.
+      - alert: SustainedChaosInjection
+        expr: chaos_experiments_active > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Chaos experiment running for over 2 minutes"
+          description: "A chaos experiment has been active for more than 2 minutes — verify this is intentional."

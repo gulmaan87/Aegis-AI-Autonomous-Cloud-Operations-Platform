@@ -49,6 +49,9 @@ model Incident {
   severity     Severity         @default(MEDIUM)
   status       IncidentStatus   @default(OPEN)
   notes        String?          // investigation notes added by operators
+  alertName    String?          // Prometheus alertname label (for alert-sourced incidents)
+  fingerprint  String?          @unique // Alertmanager fingerprint for deduplication
+  source       IncidentSource   @default(CHAOS) // how the incident was created
   experimentId String?          @unique
   experiment   ChaosExperiment? @relation(fields: [experimentId], references: [id])
   resolvedAt   DateTime?
@@ -56,6 +59,7 @@ model Incident {
   updatedAt    DateTime         @updatedAt
 
   @@index([status])
+  @@index([fingerprint])
 }
 
 enum Role {
@@ -91,4 +95,9 @@ enum IncidentStatus {
   OPEN
   INVESTIGATING
   RESOLVED
+}
+
+enum IncidentSource {
+  CHAOS  // created by a chaos experiment
+  ALERT  // created by Alertmanager webhook
 }

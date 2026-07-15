@@ -34,6 +34,7 @@ services:
       DATABASE_URL: postgresql://aegis:${POSTGRES_PASSWORD}@postgres:5432/aegis
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
+      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET}
       NODE_ENV: production
       FRONTEND_URL: http://localhost:3000
     depends_on:
@@ -81,6 +82,15 @@ services:
       - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /run/secrets
+        echo -n "$${ALERT_WEBHOOK_SECRET}" > /run/secrets/alert_webhook_secret
+        exec /bin/alertmanager --config.file=/etc/alertmanager/alertmanager.yml
+    environment:
+      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET}
 
 volumes:
   postgres_data:

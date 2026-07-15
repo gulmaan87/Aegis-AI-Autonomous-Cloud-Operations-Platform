@@ -5,6 +5,7 @@ import authRouter from './routes/auth';
 import healthRouter from './routes/health';
 import chaosRouter from './routes/chaos';
 import incidentsRouter from './routes/incidents';
+import alertsRouter from './routes/alerts';
 import { chaosMiddleware } from './middleware/chaos';
 
 collectDefaultMetrics();
@@ -42,6 +43,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/chaos', chaosRouter);
 app.use('/api/incidents', incidentsRouter);
+app.use('/api/alerts', alertsRouter);  // Alertmanager webhook — no user auth
 
 // Prometheus metrics
 app.get('/metrics', async (_req, res) => {

@@ -3,12 +3,23 @@ global:
 
 route:
   group_by: ['alertname', 'severity']
-  group_wait: 10s
+  group_wait: 15s        # wait 15s to batch alerts firing together
   group_interval: 1m
-  repeat_interval: 1h
-  receiver: 'log'
+  repeat_interval: 4h    # don't re-fire the same alert more than once per 4h
+  receiver: 'aegis-webhook'
+  routes:
+    # Critical alerts skip grouping delay — fire immediately
+    - match:
+        severity: critical
+      group_wait: 0s
+      receiver: 'aegis-webhook'
 
 receivers:
-  - name: 'log'
-    # Alerts are visible in Alertmanager UI at http://localhost:9093
-    # Add Slack/email/webhook here in a future week
+  - name: 'aegis-webhook'
+    webhook_configs:
+      - url: 'http://backend:8000/api/alerts/webhook'
+        send_resolved: true
+        http_config:
+          authorization:
+            credentials_file: /run/secrets/alert_webhook_secret
+            type: Bearer

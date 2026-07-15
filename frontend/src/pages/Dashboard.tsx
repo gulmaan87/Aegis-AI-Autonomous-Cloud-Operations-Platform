@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../lib/auth';
 import api from '../lib/api';
+import { Link } from 'react-router-dom';
 
 interface HealthStatus {
   status: string;
@@ -23,23 +24,44 @@ interface ChaosStatus {
   activeFlags: Record<string, string>;
 }
 
+interface Incident {
+  id: string;
+  title: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: 'OPEN' | 'INVESTIGATING' | 'RESOLVED';
+  source: 'CHAOS' | 'ALERT';
+  createdAt: string;
+}
+
 const FLAG_LABELS: Record<string, { label: string; color: string }> = {
-  'chaos:latency':         { label: '🐢 High Latency',     color: 'text-amber-400'  },
-  'chaos:error_rate':      { label: '💥 Service Errors',    color: 'text-red-400'    },
-  'chaos:db_slowdown':     { label: '🗄️ DB Slowdown',       color: 'text-purple-400' },
-  'chaos:memory_pressure': { label: '🧠 Memory Pressure',   color: 'text-blue-400'   },
+  'chaos:latency':         { label: '🐢 High Latency',   color: 'text-amber-400'  },
+  'chaos:error_rate':      { label: '💥 Service Errors',  color: 'text-red-400'    },
+  'chaos:db_slowdown':     { label: '🗄️ DB Slowdown',     color: 'text-purple-400' },
+  'chaos:memory_pressure': { label: '🧠 Memory Pressure', color: 'text-blue-400'   },
+};
+
+const SEVERITY_COLOR: Record<string, string> = {
+  LOW:      'badge-blue',
+  MEDIUM:   'badge-yellow',
+  HIGH:     'badge-red',
+  CRITICAL: 'bg-red-600/30 text-red-300',
 };
 
 function elapsed(startedAt: string) {
-  const diffMs = Date.now() - new Date(startedAt).getTime();
-  const secs = Math.floor(diffMs / 1000);
-  if (secs < 60) return `${secs}s`;
-  return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+  const secs = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+  return secs < 60 ? `${secs}s` : `${Math.floor(secs / 60)}m ${secs % 60}s`;
 }
 
 function progress(startedAt: string, durationMs: number) {
-  const diffMs = Date.now() - new Date(startedAt).getTime();
-  return Math.min(100, Math.round((diffMs / durationMs) * 100));
+  return Math.min(100, Math.round(((Date.now() - new Date(startedAt).getTime()) / durationMs) * 100));
+}
+
+function timeAgo(iso: string) {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  return hrs < 24 ? `${hrs}h ago` : `${Math.floor(hrs / 24)}d ago`;
 }
 
 export default function Dashboard() {
@@ -72,16 +94,24 @@ export default function Dashboard() {
     refetchInterval: 3000,
   });
 
+  // Recent open incidents (all sources — chaos + alerts)
+  const { data: recentIncidents = [] } = useQuery<Incident[]>({
+    queryKey: ['dashboard-incidents'],
+    queryFn: async () => (await api.get('/incidents', { params: { status: 'OPEN' } })).data,
+    refetchInterval: 5000,
+    select: (data) => data.slice(0, 5),
+  });
+
   const statCards = [
-    { label: 'Open Incidents',    value: stats ? String(stats.openIncidents)   : '—', badge: 'Live',   color: stats?.openIncidents ? 'badge-red'   : 'badge-green' },
-    { label: 'Chaos Experiments', value: stats ? String(stats.totalExperiments) : '—', badge: 'Live',   color: 'badge-yellow' },
-    { label: 'AI Remediations',   value: '—',                                          badge: 'Week 7', color: 'badge-blue'   },
-    { label: 'Cost Savings (USD)', value: '—',                                         badge: 'Week 8', color: 'badge-blue'   },
+    { label: 'Open Incidents',     value: stats ? String(stats.openIncidents)   : '—', badge: 'Live',   color: stats?.openIncidents ? 'badge-red' : 'badge-green' },
+    { label: 'Chaos Experiments',  value: stats ? String(stats.totalExperiments) : '—', badge: 'Live',   color: 'badge-yellow' },
+    { label: 'AI Remediations',    value: '—',                                          badge: 'Week 7', color: 'badge-blue' },
+    { label: 'Cost Savings (USD)', value: '—',                                          badge: 'Week 8', color: 'badge-blue' },
   ];
 
-  const activeExp = chaosStatus?.active ?? null;
+  const activeExp  = chaosStatus?.active ?? null;
   const activeFlags = chaosStatus?.activeFlags ?? {};
-  const flagKeys = Object.keys(activeFlags);
+  const flagKeys   = Object.keys(activeFlags);
 
   return (
     <div className="p-6 space-y-6">
@@ -136,20 +166,14 @@ export default function Dashboard() {
                   {activeExp.type.replace(/_/g, ' ')} · {elapsed(activeExp.startedAt)} elapsed
                 </p>
               </div>
-              <p className="text-xs text-slate-400">
-                {Math.round(activeExp.durationMs / 1000)}s total
-              </p>
+              <p className="text-xs text-slate-400">{Math.round(activeExp.durationMs / 1000)}s total</p>
             </div>
-
-            {/* Progress bar */}
             <div className="w-full bg-surface-700 rounded-full h-1.5">
               <div
                 className="bg-red-500 h-1.5 rounded-full transition-all duration-1000"
                 style={{ width: `${progress(activeExp.startedAt, activeExp.durationMs)}%` }}
               />
             </div>
-
-            {/* Active flags */}
             {flagKeys.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {flagKeys.map((key) => {
@@ -165,6 +189,34 @@ export default function Dashboard() {
           </div>
         ) : (
           <p className="text-slate-500 text-sm">No experiment running. Head to Chaos to launch one.</p>
+        )}
+      </div>
+
+      {/* Recent Open Incidents */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-slate-300">Recent Open Incidents</h2>
+          <Link to="/incidents" className="text-xs text-brand-400 hover:text-brand-300 transition-colors">
+            View all →
+          </Link>
+        </div>
+        {recentIncidents.length === 0 ? (
+          <p className="text-slate-500 text-sm text-center py-4">
+            ✅ No open incidents — system is healthy.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {recentIncidents.map((inc) => (
+              <div key={inc.id} className="flex items-center gap-3 bg-surface-700 rounded-lg px-3 py-2.5">
+                <span className={`badge ${SEVERITY_COLOR[inc.severity]}`}>{inc.severity}</span>
+                <span className="text-xs text-slate-500 flex-shrink-0">
+                  {inc.source === 'ALERT' ? '🔔 Alert' : '⚡ Chaos'}
+                </span>
+                <p className="text-sm text-slate-200 flex-1 truncate">{inc.title}</p>
+                <p className="text-xs text-slate-500 flex-shrink-0">{timeAgo(inc.createdAt)}</p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -198,7 +250,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: 15 }, (_, i) => {
             const level = i + 1;
-            const done = level <= 2;
+            const done  = level <= 2;
             return (
               <div
                 key={level}
