@@ -35,6 +35,9 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET}
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4o}
       NODE_ENV: production
       FRONTEND_URL: http://localhost:3000
     depends_on:

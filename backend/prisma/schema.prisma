@@ -48,18 +48,33 @@ model Incident {
   title        String
   severity     Severity         @default(MEDIUM)
   status       IncidentStatus   @default(OPEN)
-  notes        String?          // investigation notes added by operators
-  alertName    String?          // Prometheus alertname label (for alert-sourced incidents)
-  fingerprint  String?          @unique // Alertmanager fingerprint for deduplication
-  source       IncidentSource   @default(CHAOS) // how the incident was created
+  notes        String?
+  alertName    String?
+  fingerprint  String?          @unique
+  source       IncidentSource   @default(CHAOS)
   experimentId String?          @unique
   experiment   ChaosExperiment? @relation(fields: [experimentId], references: [id])
+  aiAnalysis   AiAnalysis?
   resolvedAt   DateTime?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
   @@index([status])
   @@index([fingerprint])
+}
+
+model AiAnalysis {
+  id               String   @id @default(cuid())
+  incidentId       String   @unique
+  incident         Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  rootCause        String
+  impact           String
+  remediationSteps String   // JSON-encoded string[]
+  riskScore        Severity
+  confidence       Int      // 0–100
+  model            String   // e.g. "gpt-4o" or "mock"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 enum Role {

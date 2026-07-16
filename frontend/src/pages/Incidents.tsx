@@ -5,14 +5,27 @@ import api from '../lib/api';
 type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 type IncidentStatus = 'OPEN' | 'INVESTIGATING' | 'RESOLVED';
 
+interface AiAnalysis {
+  id: string;
+  rootCause: string;
+  impact: string;
+  remediationSteps: string; // JSON string
+  riskScore: Severity;
+  confidence: number;
+  model: string;
+  createdAt: string;
+}
+
 interface Incident {
   id: string;
   title: string;
   severity: Severity;
   status: IncidentStatus;
   notes: string | null;
+  source: 'CHAOS' | 'ALERT';
   createdAt: string;
   resolvedAt: string | null;
+  aiAnalysis: AiAnalysis | null;
   experiment?: { id: string; name: string; type: string; status: string } | null;
 }
 
@@ -35,6 +48,13 @@ const STATUS_NEXT: Record<IncidentStatus, { label: string; next: IncidentStatus 
   RESOLVED:      null,
 };
 
+const RISK_COLOR: Record<Severity, string> = {
+  LOW:      'text-blue-400 border-blue-500/30 bg-blue-500/10',
+  MEDIUM:   'text-amber-400 border-amber-500/30 bg-amber-500/10',
+  HIGH:     'text-red-400 border-red-500/30 bg-red-500/10',
+  CRITICAL: 'text-red-300 border-red-600/40 bg-red-600/10',
+};
+
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
@@ -45,11 +65,144 @@ function timeAgo(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function parseSteps(raw: string): string[] {
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+// ── AI Commander Panel ────────────────────────────────────────────────────────
+function AiCommanderPanel({ incident, onAnalyzed }: { incident: Incident; onAnalyzed: () => void }) {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [error, setError] = useState('');
+  const [localAnalysis, setLocalAnalysis] = useState<AiAnalysis | null>(incident.aiAnalysis);
+
+  async function runAnalysis(force = false) {
+    setAnalyzing(true);
+    setError('');
+    try {
+      const { data } = await api.post(`/incidents/${incident.id}/analyze${force ? '?force=true' : ''}`);
+      setLocalAnalysis(data);
+      onAnalyzed();
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Analysis failed');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  const analysis = localAnalysis;
+
+  return (
+    <div className="space-y-3 border border-brand-500/20 rounded-lg p-4 bg-brand-500/5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🤖</span>
+          <p className="text-sm font-semibold text-brand-300">AI Incident Commander</p>
+        </div>
+        {analysis ? (
+          <button
+            className="text-xs text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+            onClick={() => runAnalysis(true)}
+            disabled={analyzing}
+          >
+            {analyzing ? '⏳ Re-analyzing…' : '🔄 Re-analyze'}
+          </button>
+        ) : (
+          <button
+            className="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            onClick={() => runAnalysis(false)}
+            disabled={analyzing}
+          >
+            {analyzing ? (
+              <>
+                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+                Analyzing…
+              </>
+            ) : (
+              '🤖 Analyze with AI'
+            )}
+          </button>
+        )}
+      </div>
+
+      {error && <p className="text-red-400 text-xs bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>}
+
+      {/* Loading shimmer */}
+      {analyzing && !analysis && (
+        <div className="space-y-2 animate-pulse">
+          <div className="h-3 bg-surface-600 rounded w-3/4" />
+          <div className="h-3 bg-surface-600 rounded w-full" />
+          <div className="h-3 bg-surface-600 rounded w-5/6" />
+        </div>
+      )}
+
+      {/* Analysis result */}
+      {analysis && (
+        <div className="space-y-4">
+          {/* Risk + Confidence */}
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${RISK_COLOR[analysis.riskScore]}`}>
+              {analysis.riskScore} RISK
+            </span>
+            <div className="flex-1 flex items-center gap-2">
+              <div className="flex-1 bg-surface-700 rounded-full h-1.5">
+                <div
+                  className="bg-brand-500 h-1.5 rounded-full transition-all"
+                  style={{ width: `${analysis.confidence}%` }}
+                />
+              </div>
+              <span className="text-xs text-slate-400 flex-shrink-0">{analysis.confidence}% confidence</span>
+            </div>
+          </div>
+
+          {/* Root Cause */}
+          <div>
+            <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wide">Root Cause</p>
+            <p className="text-sm text-slate-200 leading-relaxed">{analysis.rootCause}</p>
+          </div>
+
+          {/* Impact */}
+          <div>
+            <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wide">Impact</p>
+            <p className="text-sm text-slate-200 leading-relaxed">{analysis.impact}</p>
+          </div>
+
+          {/* Remediation Steps */}
+          <div>
+            <p className="text-xs text-slate-500 mb-2 font-medium uppercase tracking-wide">Remediation Steps</p>
+            <ol className="space-y-1.5">
+              {parseSteps(analysis.remediationSteps).map((step, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-slate-200">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-600/30 text-brand-300 text-xs flex items-center justify-center font-bold mt-0.5">
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Footer */}
+          <p className="text-xs text-slate-600 pt-1 border-t border-white/5">
+            Analyzed {timeAgo(analysis.createdAt)} · {analysis.model}
+          </p>
+        </div>
+      )}
+
+      {!analysis && !analyzing && !error && (
+        <p className="text-xs text-slate-500">
+          AI will analyze incident context, linked experiment, and operator notes to suggest root cause and remediation.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function Incidents() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<IncidentStatus | 'ALL'>('ALL');
   const [expanded, setExpanded] = useState<string | null>(null);
-  // Draft notes per incident id
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [noteSaving, setNoteSaving] = useState<string | null>(null);
 
@@ -96,8 +249,6 @@ export default function Incidents() {
               : 'All clear'}
           </p>
         </div>
-
-        {/* Filter tabs */}
         <div className="flex rounded-lg bg-surface-700 p-1 text-xs">
           {(['ALL', 'OPEN', 'INVESTIGATING', 'RESOLVED'] as const).map((f) => (
             <button
@@ -137,6 +288,9 @@ export default function Incidents() {
                   >
                     <span className={SEVERITY_BADGE[inc.severity]}>{inc.severity}</span>
                     <span className={STATUS_BADGE[inc.status]}>{inc.status}</span>
+                    {inc.aiAnalysis && (
+                      <span title="AI analysis available" className="text-brand-400 text-xs">🤖</span>
+                    )}
                     <p className="flex-1 text-sm text-slate-200 truncate">{inc.title}</p>
                     <p className="text-xs text-slate-500 flex-shrink-0">{timeAgo(inc.createdAt)}</p>
                     <span className="text-slate-500 text-xs">{isExpanded ? '▲' : '▼'}</span>
@@ -164,6 +318,12 @@ export default function Incidents() {
                           </div>
                         )}
                       </div>
+
+                      {/* AI Commander */}
+                      <AiCommanderPanel
+                        incident={inc}
+                        onAnalyzed={() => qc.invalidateQueries({ queryKey: ['incidents'] })}
+                      />
 
                       {/* Notes */}
                       <div className="space-y-2">
