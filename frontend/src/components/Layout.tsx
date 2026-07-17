@@ -2,9 +2,10 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 
 const NAV = [
-  { to: '/',          label: '⚡ Dashboard'  },
-  { to: '/chaos',     label: '💥 Chaos'      },
-  { to: '/incidents', label: '🚨 Incidents'  },
+  { to: '/',               label: '⚡ Dashboard'       },
+  { to: '/chaos',          label: '💥 Chaos'           },
+  { to: '/incidents',      label: '🚨 Incidents'       },
+  { to: '/infrastructure', label: '🗺️ Infrastructure'  },
 ];
 
 export default function Layout() {

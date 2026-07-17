@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Chaos from './pages/Chaos';
 import Incidents from './pages/Incidents';
+import Infrastructure from './pages/Infrastructure';
 
 const qc = new QueryClient();
 
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/chaos" element={<Chaos />} />
               <Route path="/incidents" element={<Incidents />} />
+              <Route path="/infrastructure" element={<Infrastructure />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
