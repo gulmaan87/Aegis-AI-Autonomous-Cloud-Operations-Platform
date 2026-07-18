@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Chaos from './pages/Chaos';
 import Incidents from './pages/Incidents';
 import Infrastructure from './pages/Infrastructure';
+import Chat from './pages/Chat';
 
 const qc = new QueryClient();
 
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="/chaos" element={<Chaos />} />
               <Route path="/incidents" element={<Incidents />} />
               <Route path="/infrastructure" element={<Infrastructure />} />
+              <Route path="/chat" element={<Chat />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

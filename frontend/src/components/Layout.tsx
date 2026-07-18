@@ -1,11 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import ChatWidget from './ChatWidget';
 
 const NAV = [
   { to: '/',               label: '⚡ Dashboard'       },
   { to: '/chaos',          label: '💥 Chaos'           },
   { to: '/incidents',      label: '🚨 Incidents'       },
   { to: '/infrastructure', label: '🗺️ Infrastructure'  },
+  { to: '/chat',           label: '💬 AI Chat'         },
 ];
 
 export default function Layout() {
@@ -61,6 +63,7 @@ export default function Layout() {
       <main className="flex-1 overflow-auto bg-surface-900">
         <Outlet />
       </main>
+      <ChatWidget />
     </div>
   );
 }
