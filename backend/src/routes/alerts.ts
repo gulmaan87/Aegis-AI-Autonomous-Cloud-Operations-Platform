@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Severity } from '@prisma/client';
 import db from '../lib/db';
 import { incidentsTotal } from '../index';
+import { triggerSelfHealing } from '../lib/selfHealing';
 
 const router = Router();
 
@@ -86,7 +87,7 @@ router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
         continue;
       }
 
-      await db.incident.create({
+      const incident = await db.incident.create({
         data: {
           title,
           severity,
@@ -99,6 +100,9 @@ router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
 
       incidentsTotal.inc({ severity });
       results.push({ fingerprint, action: 'created' });
+
+      // Run self-healing remediation asynchronously
+      await triggerSelfHealing(alertName, incident.id);
 
     } else if (status === 'resolved') {
       // Resolve the matching incident if it's still OPEN or INVESTIGATING

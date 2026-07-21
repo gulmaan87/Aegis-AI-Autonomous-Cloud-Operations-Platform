@@ -7,7 +7,9 @@ import chaosRouter from './routes/chaos';
 import incidentsRouter from './routes/incidents';
 import alertsRouter from './routes/alerts';
 import chatRouter from './routes/chat';
+import selfHealingRouter from './routes/selfHealing';
 import { chaosMiddleware } from './middleware/chaos';
+import { seedDefaultPolicies } from './lib/selfHealing';
 
 collectDefaultMetrics();
 
@@ -46,6 +48,8 @@ app.use('/api/chaos', chaosRouter);
 app.use('/api/incidents', incidentsRouter);
 app.use('/api/alerts', alertsRouter);  // Alertmanager webhook — no user auth
 app.use('/api/chat', chatRouter);
+app.use('/api/self-healing', selfHealingRouter);
+
 
 
 // Prometheus metrics
@@ -56,8 +60,14 @@ app.get('/metrics', async (_req, res) => {
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`[aegis-backend] listening on http://localhost:${PORT}`);
+  try {
+    await seedDefaultPolicies();
+    console.log('[Self-Healing] Default policies successfully seeded.');
+  } catch (err) {
+    console.error('[Self-Healing] Error seeding policies:', err);
+  }
 });
 
 export default app;

@@ -8,6 +8,7 @@ import Chaos from './pages/Chaos';
 import Incidents from './pages/Incidents';
 import Infrastructure from './pages/Infrastructure';
 import Chat from './pages/Chat';
+import SelfHealing from './pages/SelfHealing';
 
 const qc = new QueryClient();
 
@@ -35,6 +36,7 @@ export default function App() {
               <Route path="/incidents" element={<Incidents />} />
               <Route path="/infrastructure" element={<Infrastructure />} />
               <Route path="/chat" element={<Chat />} />
+              <Route path="/self-healing" element={<SelfHealing />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

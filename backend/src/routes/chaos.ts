@@ -30,9 +30,9 @@ const SEVERITY_MAP: Record<ExperimentType, Severity> = {
 const CHAOS_REDIS_KEYS = ['chaos:latency', 'chaos:error_rate', 'chaos:db_slowdown', 'chaos:memory_pressure'] as const;
 
 // Active experiment timers (in-memory — good enough for single-instance demo)
-const activeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+export const activeTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-async function stopExperiment(id: string, reason: 'COMPLETED' | 'STOPPED' = 'COMPLETED', stoppedBy?: string) {
+export async function stopExperiment(id: string, reason: 'COMPLETED' | 'STOPPED' = 'COMPLETED', stoppedBy?: string) {
   const timer = activeTimers.get(id);
   if (timer) {
     clearTimeout(timer);

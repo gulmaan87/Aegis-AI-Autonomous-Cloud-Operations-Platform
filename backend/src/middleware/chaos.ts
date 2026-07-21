@@ -19,6 +19,7 @@ export async function chaosMiddleware(req: Request, res: Response, next: NextFun
     req.path.startsWith('/api/auth') ||
     req.path.startsWith('/api/alerts') ||
     req.path.startsWith('/api/chat') ||
+    req.path.startsWith('/api/self-healing') ||
     req.path === '/metrics';
 
   if (skip) { next(); return; }

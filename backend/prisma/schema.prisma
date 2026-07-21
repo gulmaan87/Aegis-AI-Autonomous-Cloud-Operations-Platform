@@ -44,20 +44,21 @@ model ChaosExperiment {
 }
 
 model Incident {
-  id           String           @id @default(cuid())
-  title        String
-  severity     Severity         @default(MEDIUM)
-  status       IncidentStatus   @default(OPEN)
-  notes        String?
-  alertName    String?
-  fingerprint  String?          @unique
-  source       IncidentSource   @default(CHAOS)
-  experimentId String?          @unique
-  experiment   ChaosExperiment? @relation(fields: [experimentId], references: [id])
-  aiAnalysis   AiAnalysis?
-  resolvedAt   DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  title           String
+  severity        Severity         @default(MEDIUM)
+  status          IncidentStatus   @default(OPEN)
+  notes           String?
+  alertName       String?
+  fingerprint     String?          @unique
+  source          IncidentSource   @default(CHAOS)
+  experimentId    String?          @unique
+  experiment      ChaosExperiment? @relation(fields: [experimentId], references: [id])
+  aiAnalysis      AiAnalysis?
+  selfHealingRuns SelfHealingRun[]
+  resolvedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([status])
   @@index([fingerprint])
@@ -116,3 +117,42 @@ enum IncidentSource {
   CHAOS  // created by a chaos experiment
   ALERT  // created by Alertmanager webhook
 }
+
+model SelfHealingPolicy {
+  id              String           @id @default(cuid())
+  alertName       String           @unique // e.g. "ChaosExperimentActive", "BackendDown"
+  actionType      RemediationType
+  isEnabled       Boolean          @default(true)
+  cooldownSec     Int              @default(60)
+  lastTriggeredAt DateTime?
+  runs            SelfHealingRun[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model SelfHealingRun {
+  id          String            @id @default(cuid())
+  policyId    String
+  policy      SelfHealingPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  incidentId  String?
+  incident    Incident?         @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  status      RunStatus         @default(PENDING)
+  logs        String            // Log output text of actions taken
+  createdAt   DateTime          @default(now())
+  completedAt DateTime?
+}
+
+enum RemediationType {
+  STOP_CHAOS_EXPERIMENT
+  CLEAR_REDIS_FLAGS
+  RESTART_CONTAINER
+  SCALE_SERVICE
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
