@@ -9,11 +9,20 @@ interface AiAnalysis {
   id: string;
   rootCause: string;
   impact: string;
-  remediationSteps: string; // JSON string
+  remediationSteps: string;
   riskScore: Severity;
   confidence: number;
   model: string;
   createdAt: string;
+}
+
+interface Postmortem {
+  id: string;
+  incidentId: string;
+  content: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Incident {
@@ -26,6 +35,7 @@ interface Incident {
   createdAt: string;
   resolvedAt: string | null;
   aiAnalysis: AiAnalysis | null;
+  postmortem: Postmortem | null;
   experiment?: { id: string; name: string; type: string; status: string } | null;
 }
 
@@ -67,6 +77,167 @@ function timeAgo(iso: string) {
 
 function parseSteps(raw: string): string[] {
   try { return JSON.parse(raw); } catch { return []; }
+}
+
+// ── Postmortem Panel ───────────────────────────────────────────────────────────
+function PostmortemPanel({ incident, onSaved }: { incident: Incident; onSaved: () => void }) {
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [pm, setPm] = useState<Postmortem | null>(incident.postmortem ?? null);
+  const [draft, setDraft] = useState(incident.postmortem?.content ?? '');
+  const [editMode, setEditMode] = useState(false);
+  const isDirty = editMode && draft !== pm?.content;
+
+  async function generate() {
+    setGenerating(true);
+    setError('');
+    try {
+      const { data } = await api.post<Postmortem>(`/incidents/${incident.id}/postmortem`);
+      setPm(data);
+      setDraft(data.content);
+      setEditMode(false);
+      onSaved();
+    } catch (e: unknown) {
+      setError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function saveEdits() {
+    if (!pm) return;
+    setSaving(true);
+    try {
+      const { data } = await api.patch<Postmortem>(`/incidents/${incident.id}/postmortem`, { content: draft });
+      setPm(data);
+      setEditMode(false);
+      onSaved();
+    } catch (e: unknown) {
+      setError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function setStatus(status: string) {
+    if (!pm) return;
+    try {
+      const { data } = await api.patch<Postmortem>(`/incidents/${incident.id}/postmortem`, { status });
+      setPm(data);
+      onSaved();
+    } catch { /* silent */ }
+  }
+
+  const STATUS_COLOR: Record<string, string> = {
+    DRAFT:     'badge badge-yellow',
+    IN_REVIEW: 'badge badge-blue',
+    PUBLISHED: 'badge badge-green',
+  };
+
+  return (
+    <div className="space-y-3 border border-emerald-500/20 rounded-lg p-4 bg-emerald-500/5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-base">📋</span>
+          <p className="text-sm font-semibold text-emerald-300">AI Postmortem</p>
+          {pm && (
+            <span className={STATUS_COLOR[pm.status] ?? 'badge badge-yellow'}>{pm.status}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {pm && !editMode && (
+            <>
+              {pm.status === 'DRAFT' && (
+                <button
+                  className="text-xs text-slate-400 hover:text-blue-300 transition-colors"
+                  onClick={() => setStatus('IN_REVIEW')}
+                >Send for Review</button>
+              )}
+              {pm.status === 'IN_REVIEW' && (
+                <button
+                  className="text-xs text-slate-400 hover:text-green-300 transition-colors"
+                  onClick={() => setStatus('PUBLISHED')}
+                >Publish</button>
+              )}
+              <button
+                className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                onClick={() => setEditMode(true)}
+              >✏️ Edit</button>
+              <button
+                className="text-xs text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+                onClick={generate}
+                disabled={generating}
+              >{generating ? '⏳ Regenerating…' : '🔄 Regenerate'}</button>
+            </>
+          )}
+          {!pm && (
+            <button
+              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              onClick={generate}
+              disabled={generating}
+            >
+              {generating ? (
+                <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />Generating…</>
+              ) : '📋 Generate Postmortem'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {error && <p className="text-red-400 text-xs bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>}
+
+      {generating && !pm && (
+        <div className="space-y-2 animate-pulse">
+          <div className="h-3 bg-surface-600 rounded w-3/4" />
+          <div className="h-3 bg-surface-600 rounded w-full" />
+          <div className="h-3 bg-surface-600 rounded w-5/6" />
+          <div className="h-3 bg-surface-600 rounded w-2/3" />
+        </div>
+      )}
+
+      {pm && !editMode && (
+        <div className="mt-2">
+          {/* Markdown rendered as simple pre for now; avoids external dependency */}
+          <pre className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed font-sans bg-surface-700/50 rounded-lg p-4 max-h-96 overflow-y-auto border border-white/5">
+            {pm.content}
+          </pre>
+          <p className="text-xs text-slate-600 mt-2">
+            Last updated {timeAgo(pm.updatedAt)} · {pm.status}
+          </p>
+        </div>
+      )}
+
+      {pm && editMode && (
+        <div className="space-y-2">
+          <textarea
+            rows={20}
+            className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 resize-y focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          <div className="flex items-center gap-2">
+            <button
+              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              onClick={saveEdits}
+              disabled={saving || !isDirty}
+            >{saving ? 'Saving…' : 'Save Changes'}</button>
+            <button
+              className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+              onClick={() => { setDraft(pm.content); setEditMode(false); }}
+            >Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {!pm && !generating && (
+        <p className="text-xs text-slate-500">
+          Generate a full SRE postmortem document from this resolved incident — includes timeline, root cause, action items and lessons learned.
+        </p>
+      )}
+    </div>
+  );
 }
 
 // ── AI Commander Panel ────────────────────────────────────────────────────────
@@ -324,6 +495,14 @@ export default function Incidents() {
                         incident={inc}
                         onAnalyzed={() => qc.invalidateQueries({ queryKey: ['incidents'] })}
                       />
+
+                      {/* Postmortem — only for resolved incidents */}
+                      {inc.status === 'RESOLVED' && (
+                        <PostmortemPanel
+                          incident={inc}
+                          onSaved={() => qc.invalidateQueries({ queryKey: ['incidents'] })}
+                        />
+                      )}
 
                       {/* Notes */}
                       <div className="space-y-2">

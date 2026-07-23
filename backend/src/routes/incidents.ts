@@ -29,7 +29,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     orderBy: { createdAt: 'desc' },
     include: {
       experiment: { select: { id: true, name: true, type: true, status: true } },
-      aiAnalysis: true,
+      aiAnalysis:  true,
+      postmortem:  true,
     },
     take: 100,
   });
@@ -40,7 +41,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   const incident = await db.incident.findUnique({
     where: { id: req.params.id },
-    include: { experiment: true, aiAnalysis: true },
+    include: { experiment: true, aiAnalysis: true, postmortem: true },
   });
   if (!incident) {
     res.status(404).json({ error: 'Incident not found' });
@@ -221,5 +222,210 @@ ${incident.resolvedAt ? `Resolved: ${incident.resolvedAt.toISOString()}` : ''}`;
 
 // Suppress unused import warning — incidentsTotal is exported from index and used by alerts route
 void incidentsTotal;
+
+// ── GET /api/incidents/:id/postmortem ────────────────────────────────────────
+router.get(
+  '/:id/postmortem',
+  requireRole('OPERATOR', 'ADMIN'),
+  async (req: Request, res: Response): Promise<void> => {
+    const pm = await db.postmortem.findUnique({ where: { incidentId: req.params.id } });
+    if (!pm) { res.status(404).json({ error: 'Postmortem not generated yet' }); return; }
+    res.json(pm);
+  },
+);
+
+// ── POST /api/incidents/:id/postmortem ───────────────────────────────────────
+// Generates (or regenerates) a postmortem using AI or mock fallback.
+router.post(
+  '/:id/postmortem',
+  requireRole('OPERATOR', 'ADMIN'),
+  async (req: Request, res: Response): Promise<void> => {
+    const incident = await db.incident.findUnique({
+      where: { id: req.params.id },
+      include: { experiment: true, aiAnalysis: true, selfHealingRuns: true },
+    });
+    if (!incident) { res.status(404).json({ error: 'Incident not found' }); return; }
+    if (incident.status !== 'RESOLVED') {
+      res.status(400).json({ error: 'Postmortems can only be generated for RESOLVED incidents' });
+      return;
+    }
+
+    // Build timeline string
+    const durationMs = incident.resolvedAt
+      ? new Date(incident.resolvedAt).getTime() - new Date(incident.createdAt).getTime()
+      : null;
+    const durationStr = durationMs
+      ? `${Math.round(durationMs / 60_000)} minutes`
+      : 'unknown';
+
+    const healingActions = incident.selfHealingRuns
+      .filter((r) => r.status === 'SUCCESS')
+      .map((r) => `- Self-healing action executed at ${r.completedAt?.toISOString() ?? 'unknown time'}`)
+      .join('\n');
+
+    const timelineText = [
+      `- **${incident.createdAt.toISOString()}** — Incident created (${incident.source} source)`,
+      incident.aiAnalysis ? `- AI root cause analysis completed` : null,
+      healingActions || null,
+      incident.resolvedAt ? `- **${incident.resolvedAt.toISOString()}** — Incident resolved` : null,
+    ].filter(Boolean).join('\n');
+
+    const systemPrompt = `You are an expert SRE writing a postmortem document.
+Respond with a complete, professional postmortem in Markdown format using this exact structure:
+
+# Postmortem: [INCIDENT TITLE]
+
+## Summary
+[2-3 sentence incident summary]
+
+## Impact
+[Severity, affected systems, approximate user impact]
+
+## Timeline
+[Chronological list of events]
+
+## Root Cause
+[Technical explanation of what caused the incident]
+
+## Resolution
+[What fixed the issue and why it worked]
+
+## Action Items
+| Priority | Action | Owner | Due |
+|----------|--------|-------|-----|
+| P1 | ... | SRE Team | 1 week |
+
+## Lessons Learned
+[Key takeaways to prevent recurrence]
+
+Write in clear, professional SRE language. Be concise and specific.`;
+
+    const userPrompt = `Incident: ${incident.title}
+Severity: ${incident.severity}
+Source: ${incident.source}
+Alert Name: ${incident.alertName ?? 'N/A'}
+Experiment Type: ${incident.experiment?.type ?? 'N/A'}
+Duration: ${durationStr}
+AI Root Cause: ${incident.aiAnalysis?.rootCause ?? 'Not analyzed'}
+AI Impact: ${incident.aiAnalysis?.impact ?? 'Not analyzed'}
+Operator Notes: ${incident.notes ?? 'None'}
+
+Timeline:
+${timelineText}`;
+
+    let content: string;
+
+    if (isAiConfigured && openaiClient) {
+      try {
+        const completion = await openaiClient.chat.completions.create({
+          model: DEPLOYMENT,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: userPrompt   },
+          ],
+          temperature: 0.4,
+          max_tokens: 1500,
+        });
+        content = completion.choices[0]?.message?.content ?? '';
+      } catch (err) {
+        res.status(502).json({ error: 'Azure OpenAI call failed', detail: String(err) });
+        return;
+      }
+    } else {
+      // Mock postmortem
+      const expType  = incident.experiment?.type ?? incident.alertName ?? 'UNKNOWN';
+      const rootInfo = incident.aiAnalysis?.rootCause ?? `${expType} failure pattern detected.`;
+      content = [
+        `# Postmortem: ${incident.title}`,
+        ``,
+        `**Generated:** ${new Date().toUTCString()}  `,
+        `**Severity:** ${incident.severity}  `,
+        `**Duration:** ${durationStr}  `,
+        `**Status:** DRAFT`,
+        ``,
+        `---`,
+        ``,
+        `## Summary`,
+        ``,
+        `A ${incident.severity.toLowerCase()}-severity incident was triggered via ${incident.source === 'CHAOS' ? 'chaos engineering experiment' : 'Prometheus alert'} (\`${incident.alertName ?? expType}\`).`,
+        `The incident lasted ${durationStr} before being resolved. Self-healing automation ${incident.selfHealingRuns.length > 0 ? 'successfully intervened' : 'was not triggered'}.`,
+        ``,
+        `## Impact`,
+        ``,
+        `- **Severity Level:** ${incident.severity}`,
+        `- **Affected Services:** Backend API, dependent downstream clients`,
+        `- **Estimated Affected Users:** ${incident.severity === 'CRITICAL' ? '100% of users' : incident.severity === 'HIGH' ? 'Partial (estimated 30-60% of traffic)' : 'Minimal (< 15% of requests impacted)'}`,
+        `- **Duration:** ${durationStr}`,
+        ``,
+        `## Timeline`,
+        ``,
+        timelineText,
+        ``,
+        `## Root Cause`,
+        ``,
+        rootInfo,
+        ``,
+        `## Resolution`,
+        ``,
+        incident.selfHealingRuns.length > 0
+          ? `The Aegis self-healing engine automatically detected the anomaly and applied the configured remediation policy. The chaos experiment was stopped and Redis failure flags were cleared, allowing the system to recover.`
+          : `The incident was manually resolved by the on-call operator after verifying that the root cause had been addressed. Prometheus alert thresholds returned to normal.`,
+        ``,
+        `## Action Items`,
+        ``,
+        `| Priority | Action | Owner | Due |`,
+        `|----------|--------|-------|-----|`,
+        `| P1 | Add automated chaos detection alert for early warning | SRE Team | 1 week |`,
+        `| P2 | Update runbook for ${expType} scenarios | Platform Eng | 2 weeks |`,
+        `| P3 | Review self-healing cooldown thresholds | SRE Lead | 1 month |`,
+        ``,
+        `## Lessons Learned`,
+        ``,
+        `- Chaos experiments should be time-bounded and gated by operator approval in production.`,
+        `- Self-healing automation significantly reduced mean time to recovery (MTTR).`,
+        `- Prometheus alerting thresholds should be tuned to detect ${expType.toLowerCase().replace(/_/g, ' ')} patterns earlier.`,
+        ``,
+        `---`,
+        `*This postmortem was auto-generated by Aegis AI SRE Platform (demo mode). Provide Azure OpenAI credentials for fully AI-authored documents.*`,
+      ].join('\n');
+    }
+
+    // Persist / overwrite
+    const pm = await db.postmortem.upsert({
+      where:  { incidentId: incident.id },
+      create: { incidentId: incident.id, content, status: 'DRAFT' },
+      update: { content, updatedAt: new Date() },
+    });
+
+    res.json(pm);
+  },
+);
+
+// ── PATCH /api/incidents/:id/postmortem ──────────────────────────────────────
+// Save manual edits to the postmortem markdown.
+router.patch(
+  '/:id/postmortem',
+  requireRole('OPERATOR', 'ADMIN'),
+  async (req: Request, res: Response): Promise<void> => {
+    const { content, status } = req.body;
+    if (typeof content !== 'string' && typeof status !== 'string') {
+      res.status(400).json({ error: 'content or status string required' });
+      return;
+    }
+    try {
+      const pm = await db.postmortem.update({
+        where: { incidentId: req.params.id },
+        data: {
+          ...(typeof content === 'string' ? { content } : {}),
+          ...(typeof status  === 'string' ? { status  } : {}),
+          updatedAt: new Date(),
+        },
+      });
+      res.json(pm);
+    } catch {
+      res.status(404).json({ error: 'Postmortem not found — generate it first' });
+    }
+  },
+);
 
 export default router;

@@ -2,37 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @layer base {
-  html { @apply bg-surface-900 text-slate-100 antialiased; }
-  * { @apply border-white/10; }
+  html {
+    @apply bg-[#e6ecf5] text-slate-800 dark:bg-surface-800 dark:text-slate-100 font-sans transition-colors duration-150;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
 
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-surface-800; }
-  ::-webkit-scrollbar-thumb { @apply bg-surface-600 rounded-full; }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight text-slate-900 dark:text-white;
+  }
+
+  code, pre, kbd, samp {
+    @apply font-mono text-xs;
+  }
+
+  * {
+    @apply border-slate-300/60 dark:border-white/5;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-[#e6ecf5] dark:bg-surface-800 shadow-neu-light-pressed dark:shadow-neu-dark-pressed;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-400 dark:bg-surface-600 rounded-full hover:bg-slate-500 dark:hover:bg-surface-700 transition-colors;
+  }
 }
 
 @layer components {
+  /* Tactile Raised Neumorphic Card */
   .card {
-    @apply bg-surface-800 rounded-xl border p-5;
-    border-color: rgb(255 255 255 / 0.08);
+    @apply bg-[#e6ecf5] dark:bg-surface-800 rounded-xl p-5 
+           shadow-neu-light-flat dark:shadow-neu-dark-flat 
+           border border-white/60 dark:border-white/5 
+           transition-all duration-200 hover:shadow-neu-light-glow dark:hover:shadow-neu-dark-glow;
   }
+
+  .card-neu {
+    @apply bg-[#e6ecf5] dark:bg-surface-800 rounded-xl p-5 
+           shadow-neu-light-flat dark:shadow-neu-dark-flat 
+           border border-white/60 dark:border-white/5;
+  }
+
+  /* Sunken Inset Neumorphic Panel */
+  .panel-inset {
+    @apply bg-[#e6ecf5] dark:bg-surface-850 rounded-xl p-4 
+           shadow-neu-light-pressed dark:shadow-neu-dark-pressed 
+           border border-white/40 dark:border-white/5;
+  }
+
+  /* Neumorphic Primary Button */
   .btn-primary {
-    @apply bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2
-           rounded-lg transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 
+           text-white font-bold px-4 py-2.5 rounded-xl tracking-wide 
+           shadow-neu-light-glow dark:shadow-neu-dark-glow 
+           active:shadow-neu-light-pressed dark:active:shadow-neu-dark-pressed 
+           transition-all duration-150 
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
   }
+
+  /* Neumorphic Secondary / Tactile Button */
+  .btn-neu {
+    @apply bg-[#e6ecf5] dark:bg-surface-800 text-slate-700 dark:text-slate-200 font-semibold px-4 py-2 rounded-xl 
+           shadow-neu-light-flat dark:shadow-neu-dark-flat 
+           hover:shadow-neu-light-flat-sm dark:hover:shadow-neu-dark-flat-sm 
+           hover:text-slate-900 dark:hover:text-white 
+           active:shadow-neu-light-pressed dark:active:shadow-neu-dark-pressed 
+           transition-all duration-150 
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Neumorphic Inset Input Field */
   .input {
-    @apply w-full bg-surface-700 border rounded-lg px-3 py-2 text-sm
-           text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500
-           transition-shadow duration-150;
-    border-color: rgb(255 255 255 / 0.10);
+    @apply w-full bg-[#e6ecf5] dark:bg-surface-850 
+           shadow-neu-light-pressed dark:shadow-neu-dark-pressed 
+           border border-white/40 dark:border-white/5 rounded-xl px-4 py-2.5 
+           text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-medium 
+           focus:outline-none focus:ring-2 focus:ring-brand-500/50 
+           transition-all duration-150;
   }
+
+  /* Neumorphic Tactile Pill Badges */
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold 
+           shadow-neu-light-flat-sm dark:shadow-neu-dark-flat-sm 
+           border border-white/60 dark:border-white/5 tracking-wider uppercase;
   }
-  .badge-green  { @apply bg-emerald-500/20 text-emerald-400; }
-  .badge-red    { @apply bg-red-500/20 text-red-400; }
-  .badge-yellow { @apply bg-amber-500/20 text-amber-400; }
-  .badge-blue   { @apply bg-blue-500/20 text-blue-400; }
+  .badge-green  { @apply bg-[#e6ecf5] dark:bg-surface-800 text-emerald-600 dark:text-emerald-400 shadow-neu-light-flat-sm dark:shadow-neu-dark-flat-sm; }
+  .badge-red    { @apply bg-[#e6ecf5] dark:bg-surface-800 text-red-600 dark:text-red-400 shadow-neu-light-flat-sm dark:shadow-neu-dark-flat-sm; }
+  .badge-yellow { @apply bg-[#e6ecf5] dark:bg-surface-800 text-amber-600 dark:text-amber-400 shadow-neu-light-flat-sm dark:shadow-neu-dark-flat-sm; }
+  .badge-blue   { @apply bg-[#e6ecf5] dark:bg-surface-800 text-brand-600 dark:text-brand-400 shadow-neu-light-glow dark:shadow-neu-dark-glow; }
 }

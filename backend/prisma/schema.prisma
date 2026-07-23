@@ -56,6 +56,7 @@ model Incident {
   experiment      ChaosExperiment? @relation(fields: [experimentId], references: [id])
   aiAnalysis      AiAnalysis?
   selfHealingRuns SelfHealingRun[]
+  postmortem      Postmortem?
   resolvedAt      DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -154,5 +155,15 @@ enum RunStatus {
   RUNNING
   SUCCESS
   FAILED
+}
+
+model Postmortem {
+  id         String   @id @default(cuid())
+  incidentId String   @unique
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  content    String   // Markdown document
+  status     String   @default("DRAFT") // DRAFT | APPROVED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
