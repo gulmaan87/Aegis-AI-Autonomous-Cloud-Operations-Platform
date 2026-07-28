@@ -8,6 +8,7 @@ const NAV = [
   { to: '/chaos',          label: '💥 Chaos'           },
   { to: '/incidents',      label: '🚨 Incidents'       },
   { to: '/infrastructure', label: '🗺️ Infrastructure'  },
+  { to: '/predictions',    label: '🔮 Predictions'     },
   { to: '/chat',           label: '💬 AI Chat'         },
   { to: '/self-healing',   label: '🛡️ Auto-Healing'    },
 ];

@@ -167,3 +167,29 @@ model Postmortem {
   updatedAt  DateTime @updatedAt
 }
 
+enum AnomalyStatus {
+  NORMAL
+  WARNING
+  ANOMALY_DETECTED
+  BREACH_IMMINENT
+}
+
+model AnomalyPrediction {
+  id              String        @id @default(cuid())
+  metricName      String        // e.g. "CPU_USAGE", "MEMORY_PRESSURE", "LATENCY_P99", "ERROR_RATE"
+  service         String        // e.g. "backend-api", "redis-cache", "postgres-db"
+  currentValue    Float
+  predictedValue  Float
+  burnRatePerMin  Float
+  timeToBreachMin Int?          // Estimated minutes until SLA threshold breach
+  confidence      Int           // 0-100
+  status          AnomalyStatus @default(NORMAL)
+  severity        Severity      @default(LOW)
+  recommendation  String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+  @@index([service])
+}
+
