@@ -26,4 +26,4 @@ COPY --from=base /app/dist ./dist
 COPY --from=base /app/prisma ./prisma
 
 EXPOSE 8000
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/index.js"]
+CMD ["node", "dist/index.js"]

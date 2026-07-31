@@ -81,18 +81,18 @@ function PolicyCard({ policy }: { policy: Policy }) {
   };
 
   return (
-    <div className="bg-surface-700 border border-white/5 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="card-neu flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div className="space-y-1.5 flex-1">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-100">{policy.alertName}</span>
-          <span className={`badge ${policy.isEnabled ? 'badge-green' : 'bg-slate-500/20 text-slate-500'}`}>
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{policy.alertName}</span>
+          <span className={`badge ${policy.isEnabled ? 'badge-green' : 'bg-slate-400/20 dark:bg-slate-500/20 text-slate-500'}`}>
             {policy.isEnabled ? 'ENABLED' : 'DISABLED'}
           </span>
         </div>
-        <p className="text-xs text-brand-400 font-medium">{ACTION_LABELS[policy.actionType]}</p>
-        <div className="text-[11px] text-slate-400 flex items-center gap-4">
+        <p className="text-xs text-brand-600 dark:text-brand-400 font-medium">{ACTION_LABELS[policy.actionType]}</p>
+        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-4">
           <span>
-            Last Triggered: <span className="text-slate-300">{formatTime(policy.lastTriggeredAt)}</span>
+            Last Triggered: <span className="text-slate-700 dark:text-slate-300">{formatTime(policy.lastTriggeredAt)}</span>
           </span>
           <div className="flex items-center gap-1">
             <span>Cooldown:</span>
@@ -102,13 +102,13 @@ function PolicyCard({ policy }: { policy: Policy }) {
                   type="number"
                   value={cooldown}
                   onChange={(e) => setCooldown(parseInt(e.target.value) || 10)}
-                  className="w-16 bg-surface-800 border border-white/10 rounded px-1 text-[11px] text-slate-200 focus:outline-none"
+                  className="input w-16 py-0.5 px-1 text-[11px]"
                   min={10}
                   max={3600}
                 />
                 <button
                   onClick={handleSaveCooldown}
-                  className="text-emerald-400 hover:text-emerald-300"
+                  className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300"
                 >
                   ✓
                 </button>
@@ -117,7 +117,7 @@ function PolicyCard({ policy }: { policy: Policy }) {
                     setCooldown(policy.cooldownSec);
                     setIsEditingCooldown(false);
                   }}
-                  className="text-red-400 hover:text-red-300"
+                  className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
                 >
                   ✕
                 </button>
@@ -125,7 +125,7 @@ function PolicyCard({ policy }: { policy: Policy }) {
             ) : (
               <span
                 onClick={() => setIsEditingCooldown(true)}
-                className="text-slate-300 underline decoration-dotted cursor-pointer hover:text-white"
+                className="text-slate-600 dark:text-slate-300 underline decoration-dotted cursor-pointer hover:text-slate-900 dark:hover:text-white"
               >
                 {policy.cooldownSec}s
               </span>
@@ -140,8 +140,8 @@ function PolicyCard({ policy }: { policy: Policy }) {
           disabled={updatePolicy.isPending}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
             policy.isEnabled
-              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-              : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+              ? 'bg-red-500/20 text-red-500 dark:text-red-400 hover:bg-red-500/30'
+              : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30'
           }`}
         >
           {policy.isEnabled ? 'Disable' : 'Enable'}
@@ -171,10 +171,10 @@ export default function SelfHealing() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <span>🛡️</span> Auto-Healing Operations
         </h1>
-        <p className="text-slate-400 text-sm mt-0.5">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
           Configure remediation policies that execute automatically to heal the infrastructure when Prometheus alerts fire.
         </p>
       </div>
@@ -184,7 +184,7 @@ export default function SelfHealing() {
         {/* Left Column: Remediation Policies */}
         <div className="xl:col-span-2 space-y-4">
           <div className="card">
-            <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4 flex items-center gap-2">
               <span>⚙️</span> Remediation Policies
             </h2>
 
@@ -205,14 +205,14 @@ export default function SelfHealing() {
         {/* Right Column: Execution Runs */}
         <div className="xl:col-span-1 space-y-4">
           <div className="card h-full flex flex-col min-h-[500px]">
-            <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4 flex items-center gap-2">
               <span>📊</span> Mitigation Execution History
             </h2>
 
             {runsLoading ? (
               <p className="text-slate-500 text-sm text-center py-6">Loading runs history...</p>
             ) : runs.length === 0 ? (
-              <p className="text-slate-500 text-xs text-center py-10 text-slate-500">
+              <p className="text-slate-500 text-xs text-center py-10">
                 No self-healing operations executed yet. Firing alerts will trigger auto-mitigation events.
               </p>
             ) : (
@@ -222,7 +222,7 @@ export default function SelfHealing() {
                   return (
                     <div
                       key={run.id}
-                      className="border border-white/5 rounded-xl bg-surface-700 hover:border-white/10 transition-all overflow-hidden"
+                      className="card-neu hover:shadow-neu-light-glow dark:hover:shadow-neu-dark-glow transition-all overflow-hidden"
                     >
                       {/* Run Summary Row */}
                       <button
@@ -233,14 +233,14 @@ export default function SelfHealing() {
                           <span className={RUN_STATUS_BADGE[run.status]}>{run.status}</span>
                           <span className="text-[10px] text-slate-500">{timeAgo(run.createdAt)}</span>
                         </div>
-                        <p className="text-xs font-semibold text-slate-200 truncate">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
                           {run.policy.alertName}
                         </p>
-                        <p className="text-[10px] text-brand-400 font-medium">
+                        <p className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
                           {ACTION_LABELS[run.policy.actionType]}
                         </p>
                         {run.incident && (
-                          <p className="text-[9px] text-slate-400 mt-1 truncate">
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1 truncate">
                             Linked Incident: {run.incident.title}
                           </p>
                         )}
@@ -248,11 +248,11 @@ export default function SelfHealing() {
 
                       {/* Expanded Log Console */}
                       {isExpanded && (
-                        <div className="border-t border-white/5 bg-surface-900/60 p-3 space-y-2">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                        <div className="border-t border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-surface-900/60 p-3 space-y-2">
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                             Execution Logs
                           </p>
-                          <pre className="bg-surface-900 border border-white/5 font-mono text-[9px] leading-relaxed rounded-lg p-2.5 text-slate-300 overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto scrollbar">
+                          <pre className="panel-inset font-mono text-[9px] leading-relaxed rounded-lg p-2.5 text-slate-700 dark:text-slate-300 overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto scrollbar">
                             {run.logs}
                           </pre>
                           {run.completedAt && (

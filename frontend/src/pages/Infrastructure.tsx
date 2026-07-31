@@ -38,7 +38,7 @@ interface NodeDef {
 const NODE_POSITIONS: NodeDef[] = [
   { id: 'frontend',     x: 385,  y: 30  },
   { id: 'backend',      x: 385,  y: 180 },
-  { id: 'postgres',     x: 680,  y: 180 },
+  { id: 'mongodb',      x: 680,  y: 180 },
   { id: 'redis',        x: 680,  y: 300 },
   { id: 'prometheus',   x: 90,   y: 300 },
   { id: 'alertmanager', x: 90,   y: 420 },
@@ -48,7 +48,7 @@ const NODE_POSITIONS: NodeDef[] = [
 // Connections: [from, to]
 const EDGES: [string, string][] = [
   ['frontend',     'backend'     ],
-  ['backend',      'postgres'    ],
+  ['backend',      'mongodb'     ],
   ['backend',      'redis'       ],
   ['backend',      'prometheus'  ],
   ['prometheus',   'alertmanager'],
@@ -129,7 +129,7 @@ export default function Infrastructure() {
     if (!chaosStatus?.active) { setShake(new Set()); return; }
     const type = chaosStatus.active.type;
     const affected = new Set<string>(['backend']);
-    if (type === 'DB_SLOWDOWN')     affected.add('postgres');
+    if (type === 'DB_SLOWDOWN')     affected.add('mongodb');
     if (type === 'MEMORY_PRESSURE') affected.add('backend');
     setShake(affected);
   }, [chaosStatus]);

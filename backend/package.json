@@ -6,7 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "db:migrate": "prisma migrate deploy",
+    "db:migrate": "prisma db push",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "lint": "eslint src --ext .ts",

@@ -150,7 +150,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
     reply = `🩺 **System Health Diagnosis** (as of ${new Date(result.timestamp).toLocaleTimeString()}):\n\n` +
       `- **Backend API**: 🟢 Operational (Port :8000)\n` +
-      `- **PostgreSQL Database**: ${s.database === 'healthy' ? '🟢 Operational' : '🔴 Connection Failed'}\n` +
+      `- **MongoDB Database**: ${s.database === 'healthy' ? '🟢 Operational' : '🔴 Connection Failed'}\n` +
       `- **Redis Cache**: ${s.redis === 'healthy' ? '🟢 Operational' : '🔴 Connection Failed'}\n\n` +
       `There are currently **${result.openIncidentsCount}** open incidents. ${result.summary}`;
   } else {

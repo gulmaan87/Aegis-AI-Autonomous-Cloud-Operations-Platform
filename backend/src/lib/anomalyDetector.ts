@@ -146,7 +146,7 @@ export async function runAnomalyDetectionScan(): Promise<MetricForecast[]> {
       : 'Memory heap utilization optimal.',
   });
 
-  // 5. Database Slowdown Forecast (postgres-db)
+  // 5. Database Slowdown Forecast (mongodb-db)
   const baseDb = isDbActive ? 640.0 : 12.5 + (Math.random() * 4);
   const dbBurnRate = isDbActive ? 12.0 : 0.1;
   const dbPredicted = +(baseDb + dbBurnRate * 15).toFixed(1);
@@ -157,7 +157,7 @@ export async function runAnomalyDetectionScan(): Promise<MetricForecast[]> {
     : null;
 
   forecasts.push({
-    service: 'postgres-db',
+    service: 'mongodb-db',
     metricName: 'LATENCY_P99',
     currentValue: +baseDb.toFixed(1),
     predictedValue: dbPredicted,

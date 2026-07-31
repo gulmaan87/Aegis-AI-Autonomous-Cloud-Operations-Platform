@@ -14,7 +14,7 @@ router.get('/ready', async (_req, res) => {
   const checks: Record<string, string> = {};
 
   try {
-    await db.$queryRaw`SELECT 1`;
+    await db.$runCommandRaw({ ping: 1 });
     checks.database = 'ok';
   } catch {
     checks.database = 'error';
@@ -40,7 +40,7 @@ router.get('/services', async (_req, res) => {
   let redisStatus: 'healthy' | 'degraded' | 'down' = 'healthy';
 
   try {
-    await db.$queryRaw`SELECT 1`;
+    await db.$runCommandRaw({ ping: 1 });
   } catch {
     dbStatus = 'down';
   }
@@ -71,7 +71,7 @@ router.get('/services', async (_req, res) => {
     services: [
       { id: 'frontend',     label: 'Frontend',     port: 3000, status: 'healthy',   group: 'app',        url: 'http://localhost:3000' },
       { id: 'backend',      label: 'Backend API',  port: 8000, status: backendStatus, group: 'app',      url: 'http://localhost:8000' },
-      { id: 'postgres',     label: 'PostgreSQL',   port: 5432, status: dbStatus,    group: 'data',       url: null },
+      { id: 'mongodb',      label: 'MongoDB',      port: 27017, status: dbStatus,   group: 'data',       url: null },
       { id: 'redis',        label: 'Redis',        port: 6379, status: redisStatus, group: 'data',       url: null },
       { id: 'prometheus',   label: 'Prometheus',   port: 9090, status: 'healthy',   group: 'monitoring', url: 'http://localhost:9090' },
       { id: 'alertmanager', label: 'Alertmanager', port: 9093, status: 'healthy',   group: 'monitoring', url: 'http://localhost:9093' },
