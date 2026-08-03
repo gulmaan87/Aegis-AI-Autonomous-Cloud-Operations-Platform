@@ -10,6 +10,7 @@ import Infrastructure from './pages/Infrastructure';
 import Chat from './pages/Chat';
 import SelfHealing from './pages/SelfHealing';
 import Predictions from './pages/Predictions';
+import Costs from './pages/Costs';
 
 const qc = new QueryClient();
 
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="/incidents" element={<Incidents />} />
               <Route path="/infrastructure" element={<Infrastructure />} />
               <Route path="/predictions" element={<Predictions />} />
+              <Route path="/costs" element={<Costs />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/self-healing" element={<SelfHealing />} />
             </Route>

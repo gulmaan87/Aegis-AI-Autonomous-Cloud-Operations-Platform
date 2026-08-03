@@ -9,6 +9,7 @@ import alertsRouter from './routes/alerts';
 import chatRouter from './routes/chat';
 import selfHealingRouter from './routes/selfHealing';
 import predictionsRouter from './routes/predictions';
+import costsRouter from './routes/costs';
 import { chaosMiddleware } from './middleware/chaos';
 import { seedDefaultPolicies } from './lib/selfHealing';
 
@@ -51,6 +52,7 @@ app.use('/api/alerts', alertsRouter);  // Alertmanager webhook — no user auth
 app.use('/api/chat', chatRouter);
 app.use('/api/self-healing', selfHealingRouter);
 app.use('/api/predictions', predictionsRouter);
+app.use('/api/costs', costsRouter);
 
 
 
