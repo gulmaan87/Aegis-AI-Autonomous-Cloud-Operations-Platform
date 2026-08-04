@@ -48,13 +48,16 @@ function mapSeverity(label: string | undefined): Severity {
 router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
   // ── Token verification ────────────────────────────────────────────────────
   const secret = process.env.ALERT_WEBHOOK_SECRET;
-  if (secret) {
-    const authHeader = req.headers.authorization ?? '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (token !== secret) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
+  if (!secret) {
+    res.status(503).json({ error: 'Alert webhook is not configured' });
+    return;
+  }
+
+  const authHeader = req.headers.authorization ?? '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (token !== secret) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
   }
 
   const payload = req.body as AlertmanagerPayload;

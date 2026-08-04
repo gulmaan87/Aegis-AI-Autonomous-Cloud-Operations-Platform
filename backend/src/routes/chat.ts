@@ -147,9 +147,15 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     toolLogs.push('Executing get_health_status()');
     const result = await executeTool('get_health_status', {});
     const s = result.services;
+    const backendLabel =
+      s.backend === 'healthy'
+        ? '🟢 Operational'
+        : s.backend === 'down'
+          ? '🔴 Dependency Failure'
+          : '🟠 Degraded';
 
     reply = `🩺 **System Health Diagnosis** (as of ${new Date(result.timestamp).toLocaleTimeString()}):\n\n` +
-      `- **Backend API**: 🟢 Operational (Port :8000)\n` +
+      `- **Backend API**: ${backendLabel} (Port :8000)\n` +
       `- **MongoDB Database**: ${s.database === 'healthy' ? '🟢 Operational' : '🔴 Connection Failed'}\n` +
       `- **Redis Cache**: ${s.redis === 'healthy' ? '🟢 Operational' : '🔴 Connection Failed'}\n\n` +
       `There are currently **${result.openIncidentsCount}** open incidents. ${result.summary}`;

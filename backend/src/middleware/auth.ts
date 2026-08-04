@@ -1,18 +1,34 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../lib/jwt';
+import db from '../lib/db';
 
 export interface AuthRequest extends Request {
   user?: TokenPayload;
 }
 
-export function requireAuth(req: AuthRequest, res: Response, next: NextFunction): void {
+export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing token' });
     return;
   }
   try {
-    req.user = verifyToken(header.slice(7));
+    const token = verifyToken(header.slice(7));
+    const user = await db.user.findUnique({
+      where: { id: token.sub },
+      select: { id: true, email: true, role: true, isActive: true },
+    });
+
+    if (!user || !user.isActive) {
+      res.status(401).json({ error: 'User is inactive or no longer exists' });
+      return;
+    }
+
+    req.user = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });

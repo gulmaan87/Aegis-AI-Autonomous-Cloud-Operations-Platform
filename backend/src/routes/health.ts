@@ -4,6 +4,22 @@ import redis from '../lib/redis';
 
 const router = Router();
 
+function deriveBackendStatus(params: {
+  dbStatus: 'healthy' | 'degraded' | 'down';
+  redisStatus: 'healthy' | 'degraded' | 'down';
+  chaosActive: boolean;
+  openIncidents: number;
+}): 'healthy' | 'degraded' | 'down' {
+  const { dbStatus, redisStatus, chaosActive, openIncidents } = params;
+  if (dbStatus === 'down' || redisStatus === 'down') {
+    return 'down';
+  }
+  if (chaosActive || openIncidents > 0) {
+    return 'degraded';
+  }
+  return 'healthy';
+}
+
 // Liveness — is the process alive?
 router.get('/', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -65,7 +81,7 @@ router.get('/services', async (_req, res) => {
     chaosActive = values.some((v) => v !== null);
   } catch { /* ignore */ }
 
-  const backendStatus = chaosActive ? 'degraded' : openIncidents > 0 ? 'degraded' : 'healthy';
+  const backendStatus = deriveBackendStatus({ dbStatus, redisStatus, chaosActive, openIncidents });
 
   res.json({
     services: [
@@ -83,4 +99,3 @@ router.get('/services', async (_req, res) => {
 });
 
 export default router;
-

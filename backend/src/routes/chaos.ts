@@ -43,13 +43,25 @@ export async function stopExperiment(id: string, reason: 'COMPLETED' | 'STOPPED'
   await redis.del(...CHAOS_REDIS_KEYS);
 
   const finalStatus: ExperimentStatus = reason === 'STOPPED' ? 'STOPPED' : 'COMPLETED';
+  const endedAt = new Date();
 
   await db.chaosExperiment.update({
     where: { id },
     data: {
       status: finalStatus,
-      endedAt: new Date(),
+      endedAt,
       ...(stoppedBy ? { stoppedBy } : {}),
+    },
+  });
+
+  await db.incident.updateMany({
+    where: {
+      experimentId: id,
+      status: { in: ['OPEN', 'INVESTIGATING'] },
+    },
+    data: {
+      status: 'RESOLVED',
+      resolvedAt: endedAt,
     },
   });
 
