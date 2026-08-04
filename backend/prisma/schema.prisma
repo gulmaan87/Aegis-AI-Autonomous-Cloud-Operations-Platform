@@ -224,3 +224,41 @@ model CostOptimizationReport {
   model                String   // "gpt-4o" or "mock"
   createdAt            DateTime @default(now())
 }
+
+// ── Level 9: Security & Compliance Auditor ───────────────────────────────────
+
+enum ComplianceStatus {
+  PASSED
+  WARNING
+  FAILED
+  CRITICAL
+}
+
+model SecurityScanRecord {
+  id                    String           @id @default(auto()) @map("_id") @db.ObjectId
+  target                String           // e.g. "backend-api", "frontend-nginx", "redis-cache"
+  cveCountCritical      Int
+  cveCountHigh          Int
+  cveCountMedium        Int
+  cveCountLow           Int
+  cisScore              Float            // 0 - 100
+  status                ComplianceStatus @default(PASSED)
+  vulnerabilities       String           // JSON: { cveId, package, installedVersion, fixedVersion, severity, description }[]
+  cisChecks             String           // JSON: { checkId, title, category, status, remediation }[]
+  createdAt             DateTime         @default(now())
+
+  @@index([target])
+  @@index([status])
+}
+
+model SecurityAuditReport {
+  id                     String           @id @default(auto()) @map("_id") @db.ObjectId
+  overallScore           Float            // 0 - 100
+  totalVulnerabilities   Int
+  criticalVulnerabilities Int
+  complianceStatus       ComplianceStatus @default(PASSED)
+  summary                String           // Markdown AI security roadmap
+  model                  String           // "gpt-4o" or "mock"
+  createdAt              DateTime         @default(now())
+}
+
