@@ -11,6 +11,7 @@ import selfHealingRouter from './routes/selfHealing';
 import predictionsRouter from './routes/predictions';
 import costsRouter from './routes/costs';
 import securityRouter from './routes/security';
+import deploymentsRouter from './routes/deployments';
 import { chaosMiddleware } from './middleware/chaos';
 import { seedDefaultPolicies } from './lib/selfHealing';
 
@@ -55,6 +56,7 @@ app.use('/api/self-healing', selfHealingRouter);
 app.use('/api/predictions', predictionsRouter);
 app.use('/api/costs', costsRouter);
 app.use('/api/security', securityRouter);
+app.use('/api/deployments', deploymentsRouter);
 
 
 

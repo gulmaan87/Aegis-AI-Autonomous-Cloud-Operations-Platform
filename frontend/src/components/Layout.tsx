@@ -11,6 +11,7 @@ const NAV = [
   { to: '/predictions',    label: '🔮 Predictions'     },
   { to: '/costs',          label: '💰 Cost Optimizer'  },
   { to: '/security',       label: '🛡️ Security Audit'  },
+  { to: '/deployments',    label: '🚀 Deployments'     },
   { to: '/chat',           label: '💬 AI Chat'         },
   { to: '/self-healing',   label: '🛡️ Auto-Healing'    },
 ];

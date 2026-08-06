@@ -262,3 +262,45 @@ model SecurityAuditReport {
   createdAt              DateTime         @default(now())
 }
 
+// ── Level 11: Automated Rollback & CI/CD Pipeline ────────────────────────────
+
+enum DeploymentStatus {
+  PENDING
+  DEPLOYING
+  CANARY_TESTING
+  HEALTHY
+  DEGRADED
+  ROLLED_BACK
+  FAILED
+}
+
+model DeploymentRecord {
+  id              String                 @id @default(auto()) @map("_id") @db.ObjectId
+  service         String                 // e.g. "backend-api", "frontend-nginx"
+  version         String                 // e.g. "v2.5.0"
+  previousVersion String                 // e.g. "v2.4.0" (rollback target)
+  gitCommit       String                 // e.g. "c89a8e2"
+  deployedBy      String                 // username or "CI/CD System"
+  status          DeploymentStatus       @default(CANARY_TESTING)
+  canaryErrorRate Float                  @default(0.0) // %
+  canaryLatencyP99 Float                 @default(45.0) // ms
+  rollbackReason  String?                // explanation if auto-rolled back
+  healthChecks    DeploymentHealthCheck[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([service])
+  @@index([status])
+}
+
+model DeploymentHealthCheck {
+  id           String           @id @default(auto()) @map("_id") @db.ObjectId
+  deploymentId String           @db.ObjectId
+  deployment   DeploymentRecord @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  checkName    String           // e.g. "HTTP_CANARY_PROBE", "P99_LATENCY_SLO"
+  status       String           // "PASSED" | "FAILED"
+  message      String
+  timestamp    DateTime         @default(now())
+}
+
+
