@@ -303,4 +303,43 @@ model DeploymentHealthCheck {
   timestamp    DateTime         @default(now())
 }
 
+// ── Level 12: Multi-Agent AI Collaboration Mesh ───────────────────────────────
 
+enum AgentRole {
+  SRE_AGENT
+  FINOPS_AGENT
+  SECOPS_AGENT
+  CHAOS_AGENT
+}
+
+enum AgentStatus {
+  IDLE
+  ANALYZING
+  PROPOSING_ACTION
+  EXECUTING
+  CONSENSUS_REACHED
+}
+
+model MultiAgentSession {
+  id               String      @id @default(auto()) @map("_id") @db.ObjectId
+  topic            String      // Deliberation topic e.g. "System Recovery & Cost Optimization"
+  incidentId       String?     @db.ObjectId
+  consensusReached Boolean     @default(false)
+  finalDecision    String?     // Agreed multi-domain action plan (markdown)
+  messages         String      // JSON: AgentMessage[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([consensusReached])
+}
+
+model AgentTelemetry {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  agentRole     AgentRole   @unique
+  status        AgentStatus @default(IDLE)
+  healthScore   Float       @default(100.0)
+  insightsCount Int         @default(0)
+  lastActiveAt  DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
