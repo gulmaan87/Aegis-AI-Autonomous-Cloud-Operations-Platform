@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import ChatWidget from './ChatWidget';
+import VoiceWidget from './VoiceWidget';
 
 const NAV = [
   { to: '/',               label: '⚡ Dashboard'       },
@@ -12,6 +13,7 @@ const NAV = [
   { to: '/costs',          label: '💰 Cost Optimizer'  },
   { to: '/security',       label: '🛡️ Security Audit'  },
   { to: '/deployments',    label: '🚀 Deployments'     },
+  { to: '/voice',          label: '🎙️ Voice Ops'       },
   { to: '/chat',           label: '💬 AI Chat'         },
   { to: '/self-healing',   label: '🛡️ Auto-Healing'    },
 ];
@@ -106,6 +108,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <ChatWidget />
+      <VoiceWidget />
     </div>
   );
 }
