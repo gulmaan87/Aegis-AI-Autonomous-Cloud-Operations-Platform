@@ -343,3 +343,40 @@ model AgentTelemetry {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
+
+// ── Level 13: AI Learning Engine ─────────────────────────────────────────────
+
+model ResolutionFeedback {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  incidentId           String   @db.ObjectId
+  resolvedBy           String   // engineer username or email
+  ttmMins              Int      // time-to-mitigate in minutes
+  whatWorked           String   // free-text: what remediation steps worked
+  whatFailed           String?  // free-text: what was tried but failed
+  suggestedImprovements String? // free-text: process improvement ideas
+  rating               Int      // 1–5 star usefulness rating
+  learningExtracted    Boolean  @default(false)
+  createdAt            DateTime @default(now())
+
+  @@index([incidentId])
+}
+
+model IncidentLearning {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  incidentId        String   @db.ObjectId
+  incidentTitle     String
+  rootCausePattern  String   // e.g. "MEMORY_LEAK_UNDER_LOAD", "DB_CONNECTION_EXHAUSTION"
+  resolutionPattern String   // e.g. "SCALE_HORIZONTAL + CIRCUIT_BREAKER"
+  summary           String   // AI-generated learning summary (markdown)
+  keywords          String   // JSON: string[] — searchable tags
+  confidenceScore   Float    // 0.0–1.0
+  usefulnessVotes   Int      @default(0)
+  severity          String   // Incident severity when learning was captured
+  ttmMins           Int?     // time-to-mitigate for context
+  model             String   // "gpt-4o" or "mock"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([rootCausePattern])
+  @@index([confidenceScore])
+}

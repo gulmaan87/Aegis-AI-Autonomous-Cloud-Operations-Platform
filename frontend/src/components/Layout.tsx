@@ -15,6 +15,7 @@ const NAV = [
   { to: '/deployments',    label: '🚀 Deployments'     },
   { to: '/voice',          label: '🎙️ Voice Ops'       },
   { to: '/multi-agent',    label: '🤖 Multi-Agent AI'  },
+  { to: '/learning',       label: '🧠 Learning Engine' },
   { to: '/chat',           label: '💬 AI Chat'         },
   { to: '/self-healing',   label: '🛡️ Auto-Healing'    },
 ];

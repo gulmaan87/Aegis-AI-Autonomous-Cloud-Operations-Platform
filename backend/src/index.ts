@@ -13,6 +13,7 @@ import costsRouter from './routes/costs';
 import securityRouter from './routes/security';
 import deploymentsRouter from './routes/deployments';
 import multiAgentRouter from './routes/multiAgent';
+import learningRouter from './routes/learning';
 import { chaosMiddleware } from './middleware/chaos';
 import { seedDefaultPolicies } from './lib/selfHealing';
 
@@ -59,6 +60,7 @@ app.use('/api/costs', costsRouter);
 app.use('/api/security', securityRouter);
 app.use('/api/deployments', deploymentsRouter);
 app.use('/api/multi-agent', multiAgentRouter);
+app.use('/api/learning', learningRouter);
 
 
 
