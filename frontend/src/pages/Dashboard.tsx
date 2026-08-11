@@ -250,7 +250,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: 15 }, (_, i) => {
             const level = i + 1;
-            const COMPLETED_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+            const COMPLETED_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
             const done = COMPLETED_LEVELS.includes(level);
             return (
               <div
@@ -265,7 +265,7 @@ export default function Dashboard() {
             );
           })}
         </div>
-        <p className="text-slate-500 text-xs mt-3">Levels 1–12 complete (12 / 15 levels operational)</p>
+        <p className="text-slate-500 text-xs mt-3">Levels 1–13 complete (13 / 15 levels operational)</p>
       </div>
     </div>
   );

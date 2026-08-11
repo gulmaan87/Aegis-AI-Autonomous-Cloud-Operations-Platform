@@ -15,6 +15,7 @@ import Security from './pages/Security';
 import Deployments from './pages/Deployments';
 import VoiceOps from './pages/VoiceOps';
 import MultiAgent from './pages/MultiAgent';
+import Learning from './pages/Learning';
 
 const qc = new QueryClient();
 
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="/deployments" element={<Deployments />} />
               <Route path="/voice" element={<VoiceOps />} />
               <Route path="/multi-agent" element={<MultiAgent />} />
+              <Route path="/learning" element={<Learning />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/self-healing" element={<SelfHealing />} />
             </Route>
