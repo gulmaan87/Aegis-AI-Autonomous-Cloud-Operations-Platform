@@ -4,20 +4,14 @@ import redis from '../lib/redis';
 
 const router = Router();
 
-function deriveBackendStatus(params: {
+function deriveBackendStatus({ dbStatus, redisStatus, chaosActive, openIncidents }: {
   dbStatus: 'healthy' | 'degraded' | 'down';
   redisStatus: 'healthy' | 'degraded' | 'down';
   chaosActive: boolean;
   openIncidents: number;
 }): 'healthy' | 'degraded' | 'down' {
-  const { dbStatus, redisStatus, chaosActive, openIncidents } = params;
-  if (dbStatus === 'down' || redisStatus === 'down') {
-    return 'down';
-  }
-  if (chaosActive || openIncidents > 0) {
-    return 'degraded';
-  }
-  return 'healthy';
+  if (dbStatus === 'down' || redisStatus === 'down') return 'down';
+  return chaosActive || openIncidents > 0 ? 'degraded' : 'healthy';
 }
 
 // Liveness — is the process alive?

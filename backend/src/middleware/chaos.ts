@@ -13,18 +13,8 @@ import redis from '../lib/redis';
  *   chaos:memory_pressure → ms of extra delay simulating GC / memory pressure
  */
 export async function chaosMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const skip =
-    req.path.startsWith('/api/chaos') ||
-    req.path.startsWith('/api/health') ||
-    req.path.startsWith('/api/auth') ||
-    req.path.startsWith('/api/alerts') ||
-    req.path.startsWith('/api/chat') ||
-    req.path.startsWith('/api/self-healing') ||
-    req.path.startsWith('/api/predictions') ||
-    req.path.startsWith('/api/costs') ||
-    req.path.startsWith('/api/security') ||
-    req.path.startsWith('/api/deployments') ||
-    req.path === '/metrics';
+  const EXEMPT_PREFIXES = ['chaos', 'health', 'auth', 'alerts', 'chat', 'self-healing', 'predictions', 'costs', 'security', 'deployments'];
+  const skip = req.path === '/metrics' || EXEMPT_PREFIXES.some((p) => req.path.startsWith(`/api/${p}`));
 
   if (skip) { next(); return; }
 

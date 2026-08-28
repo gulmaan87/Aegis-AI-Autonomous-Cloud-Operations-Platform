@@ -104,35 +104,21 @@ router.put('/config', requireRole('ADMIN', 'OPERATOR'), async (req: AuthRequest,
   } = req.body;
 
   try {
-    let config = await db.systemConfig.findFirst();
-    if (config) {
-      config = await db.systemConfig.update({
-        where: { id: config.id },
-        data: {
-          clusterName,
-          environment,
-          retentionDays: Number(retentionDays),
-          slackWebhookUrl,
-          pagerDutyIntegrationKey,
-          autoRemediationEnabled: Boolean(autoRemediationEnabled),
-          maxChaosDurationSec: Number(maxChaosDurationSec),
-          updatedBy: req.user?.email ?? 'admin',
-        },
-      });
-    } else {
-      config = await db.systemConfig.create({
-        data: {
-          clusterName: clusterName ?? 'Aegis-Prod-Cluster-01',
-          environment: environment ?? 'PRODUCTION',
-          retentionDays: Number(retentionDays ?? 90),
-          slackWebhookUrl,
-          pagerDutyIntegrationKey,
-          autoRemediationEnabled: Boolean(autoRemediationEnabled ?? true),
-          maxChaosDurationSec: Number(maxChaosDurationSec ?? 300),
-          updatedBy: req.user?.email ?? 'admin',
-        },
-      });
-    }
+    const data = {
+      clusterName: clusterName ?? 'Aegis-Prod-Cluster-01',
+      environment: environment ?? 'PRODUCTION',
+      retentionDays: Number(retentionDays ?? 90),
+      slackWebhookUrl,
+      pagerDutyIntegrationKey,
+      autoRemediationEnabled: autoRemediationEnabled !== undefined ? Boolean(autoRemediationEnabled) : true,
+      maxChaosDurationSec: Number(maxChaosDurationSec ?? 300),
+      updatedBy: req.user?.email ?? 'admin',
+    };
+
+    const existing = await db.systemConfig.findFirst();
+    const config = existing
+      ? await db.systemConfig.update({ where: { id: existing.id }, data })
+      : await db.systemConfig.create({ data });
 
     await logAuditAction({
       userId: req.user?.sub,
