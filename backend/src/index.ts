@@ -14,6 +14,7 @@ import securityRouter from './routes/security';
 import deploymentsRouter from './routes/deployments';
 import multiAgentRouter from './routes/multiAgent';
 import learningRouter from './routes/learning';
+import enterpriseRouter from './routes/enterprise';
 import { chaosMiddleware } from './middleware/chaos';
 import { seedDefaultPolicies } from './lib/selfHealing';
 
@@ -61,6 +62,7 @@ app.use('/api/security', securityRouter);
 app.use('/api/deployments', deploymentsRouter);
 app.use('/api/multi-agent', multiAgentRouter);
 app.use('/api/learning', learningRouter);
+app.use('/api/enterprise', enterpriseRouter);
 
 
 

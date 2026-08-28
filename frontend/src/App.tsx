@@ -17,6 +17,7 @@ import VoiceOps from './pages/VoiceOps';
 import MultiAgent from './pages/MultiAgent';
 import Learning from './pages/Learning';
 import RecruiterDemo from './pages/RecruiterDemo';
+import Enterprise from './pages/Enterprise';
 
 const qc = new QueryClient();
 
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="/multi-agent" element={<MultiAgent />} />
               <Route path="/learning" element={<Learning />} />
               <Route path="/demo" element={<RecruiterDemo />} />
+              <Route path="/enterprise" element={<Enterprise />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/self-healing" element={<SelfHealing />} />
             </Route>

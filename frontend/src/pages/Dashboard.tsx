@@ -250,7 +250,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: 15 }, (_, i) => {
             const level = i + 1;
-            const COMPLETED_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+            const COMPLETED_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             const done = COMPLETED_LEVELS.includes(level);
             return (
               <div
@@ -265,7 +265,9 @@ export default function Dashboard() {
             );
           })}
         </div>
-        <p className="text-slate-500 text-xs mt-3">Levels 1–14 complete (14 / 15 levels operational)</p>
+        <p className="text-emerald-400 font-extrabold text-xs mt-3 flex items-center gap-1.5">
+          <span>🎉 ALL 15 LEVELS COMPLETED! (15 / 15 levels 100% operational)</span>
+        </p>
         <Link
           to="/demo"
           className="mt-3 inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white transition-colors shadow-neu-light-flat-sm dark:shadow-neu-dark-flat-sm"

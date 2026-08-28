@@ -380,3 +380,33 @@ model IncidentLearning {
   @@index([rootCausePattern])
   @@index([confidenceScore])
 }
+
+// ── Level 15: Enterprise Platform Features ───────────────────────────────────
+
+model AuditLog {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String?
+  userEmail      String   @default("system")
+  action         String   // e.g. "CHAOS_START", "SELF_HEALING_TOGGLE", "USER_PROMOTE", "DEPLOYMENT_ROLLBACK"
+  resourceTarget String   // e.g. "HIGH_CPU", "ChaosExperimentActive", "operator@aegis.ai"
+  details        String?  // JSON-encoded extra context
+  ipAddress      String?  @default("127.0.0.1")
+  createdAt      DateTime @default(now())
+
+  @@index([action])
+  @@index([userEmail])
+}
+
+model SystemConfig {
+  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
+  clusterName             String   @default("Aegis-Prod-Cluster-01")
+  environment             String   @default("PRODUCTION") // PRODUCTION | STAGING | DR
+  retentionDays           Int      @default(90)
+  slackWebhookUrl         String?  @default("https://hooks.slack.com/services/mock/aegis/alerts")
+  pagerDutyIntegrationKey String?  @default("pd_live_aegis_key_9981")
+  autoRemediationEnabled  Boolean  @default(true)
+  maxChaosDurationSec     Int      @default(300)
+  updatedBy               String   @default("admin@aegis.ai")
+  updatedAt               DateTime @updatedAt
+}
+
