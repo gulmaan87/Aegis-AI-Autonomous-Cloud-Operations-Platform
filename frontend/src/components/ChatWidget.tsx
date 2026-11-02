@@ -121,9 +121,9 @@ export default function ChatWidget() {
               <div className="flex flex-col items-start mr-auto max-w-[85%]">
                 <div className="bg-surface-700 text-slate-400 px-3 py-2 rounded-xl rounded-tl-none border border-white/5 text-xs flex items-center gap-1">
                   <span className="flex gap-0.5">
-                    <span className="w-1 h-1 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1 h-1 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1 h-1 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-1 h-1 bg-brand-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1 h-1 bg-brand-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1 h-1 bg-brand-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
                   </span>
                 </div>
               </div>

@@ -128,9 +128,9 @@ export default function Chat() {
             <div className="flex flex-col items-start mr-auto max-w-[80%]">
               <div className="bg-surface-700 text-slate-400 px-4 py-3 rounded-2xl rounded-tl-none border border-white/5 text-sm flex items-center gap-2">
                 <span className="flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
                 </span>
                 <span className="text-xs italic font-medium">Querying SRE tools...</span>
               </div>

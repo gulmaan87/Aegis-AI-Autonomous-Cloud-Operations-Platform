@@ -49,7 +49,7 @@ const VOTE_STYLE: Record<string, string> = {
 const AGENT_COLORS: Record<string, string> = {
   SRE_AGENT: 'from-blue-500/20 to-blue-600/10 border-blue-500/30',
   FINOPS_AGENT: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
-  SECOPS_AGENT: 'from-violet-500/20 to-violet-600/10 border-violet-500/30',
+  SECOPS_AGENT: 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
   CHAOS_AGENT: 'from-rose-500/20 to-rose-600/10 border-rose-500/30',
 };
 
