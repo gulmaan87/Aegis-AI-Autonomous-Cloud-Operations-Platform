@@ -140,36 +140,47 @@ router.post(
     const { name, type, durationMs } = parsed.data;
     const userId = req.user!.sub;
 
-    // Enforce single-experiment-at-a-time
-    const running = await db.chaosExperiment.findFirst({ where: { status: 'RUNNING' } });
-    if (running) {
-      res.status(409).json({ error: 'An experiment is already running. Stop it first.' });
+    // Atomic mutex to prevent concurrent launch race conditions
+    const lockAcquired = await redis.set('chaos:lock', 'locked', 'EX', 10, 'NX');
+    if (!lockAcquired) {
+      res.status(409).json({ error: 'An experiment launch is already in progress.' });
       return;
     }
 
-    const experiment = await db.chaosExperiment.create({
-      data: {
-        name,
-        type,
-        durationMs,
-        status: 'RUNNING',
-        startedAt: new Date(),
-        createdBy: userId,
-        incident: {
-          create: {
-            title: `[Chaos] ${name}`,
-            severity: SEVERITY_MAP[type],
-            status: 'OPEN',
+    try {
+      // Enforce single-experiment-at-a-time
+      const running = await db.chaosExperiment.findFirst({ where: { status: 'RUNNING' } });
+      if (running) {
+        res.status(409).json({ error: 'An experiment is already running. Stop it first.' });
+        return;
+      }
+
+      const experiment = await db.chaosExperiment.create({
+        data: {
+          name,
+          type,
+          durationMs,
+          status: 'RUNNING',
+          startedAt: new Date(),
+          createdBy: userId,
+          incident: {
+            create: {
+              title: `[Chaos] ${name}`,
+              severity: SEVERITY_MAP[type],
+              status: 'OPEN',
+            },
           },
         },
-      },
-      include: { incident: true },
-    });
+        include: { incident: true },
+      });
 
-    chaosExperimentsActive.inc();
-    await startExperimentSideEffects(experiment);
+      chaosExperimentsActive.inc();
+      await startExperimentSideEffects(experiment);
 
-    res.status(201).json(experiment);
+      res.status(201).json(experiment);
+    } finally {
+      await redis.del('chaos:lock');
+    }
   },
 );
 

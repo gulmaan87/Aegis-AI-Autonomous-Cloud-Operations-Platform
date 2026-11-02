@@ -13,7 +13,7 @@ cd Aegis-AI-Autonomous-Cloud-Operations-Platform
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env and set POSTGRES_PASSWORD and JWT_SECRET
+# Edit .env and set MONGO_PASSWORD and JWT_SECRET
 
 # 3. Start everything
 docker compose up -d
@@ -41,7 +41,7 @@ docker compose up -d
 │   /api/auth  ·  /api/health  ·  /metrics    │
 └───────┬───────────────────────┬─────────────┘
         │ Prisma ORM            │ ioredis
-   PostgreSQL 16             Redis 7
+   MongoDB 6.0               Redis 7
 ```
 
 ---
@@ -54,7 +54,7 @@ docker compose up -d
 | Runtime | Node.js 20 + TypeScript |
 | Framework | Express |
 | ORM | Prisma |
-| Database | PostgreSQL 16 |
+| Database | MongoDB 6.0 (or MongoDB Atlas) |
 | Cache | Redis 7 |
 | Auth | JWT (jsonwebtoken) + bcrypt |
 | Validation | Zod |

@@ -1,9 +1,21 @@
 services:
+  # ── MongoDB ──────────────────────────────────────────────────────
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      retries: 5
+
   # ── Redis ────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6380}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -18,11 +30,11 @@ services:
       - 8.8.8.8
       - 8.8.4.4
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:-mongodb://mongo:27017/aegis?authSource=admin}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET}
-      ADMIN_SECRET: ${ADMIN_SECRET}
-      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-aegis_jwt_secret_change_in_production}
+      ADMIN_SECRET: ${ADMIN_SECRET:-aegis_admin_secret_change_in_production}
+      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET:-aegis_alert_webhook_secret}
       AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
       AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
       AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4o}
@@ -30,6 +42,8 @@ services:
       FRONTEND_URL: http://localhost:3000
     depends_on:
       redis:
+        condition: service_healthy
+      mongo:
         condition: service_healthy
 
   # ── Frontend ────────────────────────────────────────────────────
@@ -69,17 +83,16 @@ services:
       - "9093:9093"
     volumes:
       - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
     entrypoint:
       - /bin/sh
       - -c
       - |
         mkdir -p /run/secrets
-        echo -n "$${ALERT_WEBHOOK_SECRET}" > /run/secrets/alert_webhook_secret
+        echo -n "$${ALERT_WEBHOOK_SECRET:-aegis_alert_webhook_secret}" > /run/secrets/alert_webhook_secret
         exec /bin/alertmanager --config.file=/etc/alertmanager/alertmanager.yml
     environment:
-      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET}
+      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET:-aegis_alert_webhook_secret}
 
 volumes:
   grafana_data:
+  mongo_data:

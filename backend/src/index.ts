@@ -74,9 +74,23 @@ app.get('/metrics', async (_req, res) => {
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
+// Global error handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[aegis-backend error]', err);
+  const status = typeof err.status === 'number' ? err.status : 500;
+  res.status(status).json({ error: err.message || 'Internal Server Error' });
+});
+
 app.listen(PORT, async () => {
   console.log(`[aegis-backend] listening on http://localhost:${PORT}`);
   try {
+    const db = (await import('./lib/db')).default;
+    const redis = (await import('./lib/redis')).default;
+    await db.chaosExperiment.updateMany({
+      where: { status: 'RUNNING' },
+      data: { status: 'STOPPED', endedAt: new Date() },
+    });
+    await redis.del('chaos:latency', 'chaos:error_rate', 'chaos:db_slowdown', 'chaos:memory_pressure', 'chaos:lock');
     await seedDefaultPolicies();
     console.log('[Self-Healing] Default policies successfully seeded.');
   } catch (err) {
