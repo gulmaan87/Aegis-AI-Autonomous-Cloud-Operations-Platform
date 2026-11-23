@@ -9,6 +9,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [adminSecret, setAdminSecret] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +21,7 @@ export default function Login() {
       if (mode === 'login') {
         await login(email, password);
       } else {
-        await register(email, password, name);
+        await register(email, password, name, adminSecret);
       }
       navigate('/');
     } catch (err: unknown) {
@@ -66,16 +67,28 @@ export default function Login() {
 
           <form onSubmit={submit} className="space-y-4">
             {mode === 'register' && (
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Name</label>
-                <input
-                  className="input"
-                  type="text"
-                  placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Name</label>
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Admin Secret (optional)</label>
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="Enter secret for ADMIN role"
+                    value={adminSecret}
+                    onChange={(e) => setAdminSecret(e.target.value)}
+                  />
+                </div>
+              </>
             )}
 
             <div>

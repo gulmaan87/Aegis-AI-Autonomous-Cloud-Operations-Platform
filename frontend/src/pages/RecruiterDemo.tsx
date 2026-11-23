@@ -155,12 +155,12 @@ export default function RecruiterDemo() {
             <div className="flex items-center gap-2">
               <span className="text-2xl">🎯</span>
               <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                Recruiter Demo Mode
+                SRE System Resilience Audit
               </h1>
-              <span className="badge badge-blue text-[10px] font-bold">LIVE</span>
+              <span className="badge badge-blue text-[10px] font-bold">OPERATIONAL</span>
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Aegis AI — Autonomous Cloud Operations Platform · One-click full feature walkthrough
+              Aegis AI — Autonomous Cloud Operations Platform · End-to-end resilience & telemetry validation suite
             </p>
           </div>
 

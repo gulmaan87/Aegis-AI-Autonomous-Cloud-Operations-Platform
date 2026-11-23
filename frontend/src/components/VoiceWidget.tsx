@@ -21,7 +21,7 @@ export default function VoiceWidget() {
   if (!isSupported) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+    <div className="fixed bottom-6 right-20 z-50 flex flex-col items-end gap-2">
       {/* Transcript / Feedback Bubble */}
       {(isListening || transcript || lastResult || processing) && (
         <div className="bg-slate-900/90 dark:bg-surface-850/95 backdrop-blur-md border border-slate-700/80 dark:border-slate-800 text-white rounded-2xl p-4 shadow-2xl max-w-xs sm:max-w-sm space-y-2 animate-in fade-in slide-in-from-bottom-3 duration-200">

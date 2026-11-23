@@ -2,14 +2,16 @@ services:
   # ── MongoDB ──────────────────────────────────────────────────────
   mongo:
     image: mongo:6.0
+    command: ["--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--eval", "try { rs.status().ok } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok }"]
       interval: 5s
-      retries: 5
+      retries: 10
+      start_period: 5s
 
   # ── Redis ────────────────────────────────────────────────────────
   redis:
@@ -30,7 +32,7 @@ services:
       - 8.8.8.8
       - 8.8.4.4
     environment:
-      DATABASE_URL: ${DATABASE_URL:-mongodb://mongo:27017/aegis?authSource=admin}
+      DATABASE_URL: ${DATABASE_URL:-mongodb://mongo:27017/aegis?replicaSet=rs0}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-aegis_jwt_secret_change_in_production}
       ADMIN_SECRET: ${ADMIN_SECRET:-aegis_admin_secret_change_in_production}

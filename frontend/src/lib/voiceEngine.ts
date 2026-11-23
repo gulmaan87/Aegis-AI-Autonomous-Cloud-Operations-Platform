@@ -138,23 +138,23 @@ export async function processVoiceCommand(
     }
   } else if (lower.includes('stop all chaos') || lower.includes('stop chaos')) {
     intent = 'CHAOS_STOP';
-    responseSpeech = 'Stopping all active chaos experiments.';
+    responseSpeech = 'Stopping active chaos experiments.';
     try {
-      await api.post('/chaos/stop-all');
+      const activeRes = await api.get('/chaos/status');
+      const activeId = activeRes.data?.active?.id;
+      if (activeId) {
+        await api.post(`/chaos/experiments/${activeId}/stop`);
+      }
       success = true;
     } catch {
-      responseSpeech = 'Chaos stop signal dispatched.';
-      success = true;
+      responseSpeech = 'No active chaos experiment to stop.';
+      success = false;
     }
   } else if (lower.includes('self healing')) {
     intent = 'SELF_HEALING';
-    responseSpeech = 'Triggering automated self-healing remediation.';
-    try {
-      await api.post('/self-healing/trigger');
-      success = true;
-    } catch {
-      success = true;
-    }
+    responseSpeech = 'Navigating to self-healing control policies.';
+    navigate('/self-healing');
+    success = true;
   } else if (lower.includes('security')) {
     intent = 'SECURITY_SCAN';
     responseSpeech = 'Initiating security audit and vulnerability scan.';
